@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Plan Generator</title>
+<style>
+  :root {
+    --ink: #1f2733;
+    --accent: #2563eb;
+    --panel: #f6f7f9;
+    --panel-line: #dde1e7;
+    --muted: #6b7280;
+    --bg: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    height: 100vh;
+  }
+  .panel { background: var(--panel); border-right: 1px solid var(--panel-line); padding: 20px; overflow-y: auto; }
+  .panel h1 { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; margin: 0 0 4px; }
+  .panel .sub { font-size: 12px; color: var(--muted); margin: 0 0 18px; }
+  fieldset { border: none; border-top: 1px solid var(--panel-line); padding: 16px 0 4px; margin: 0; }
+  legend { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0; }
+  label { display: block; font-size: 12px; font-weight: 600; margin: 12px 0 5px; }
+  input[type="text"], select {
+    width: 100%; padding: 7px 9px; font-size: 13px; font-family: inherit;
+    border: 1px solid var(--panel-line); border-radius: 6px; background: #fff; color: var(--ink);
+  }
+  input[type="text"]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .check { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; margin: 8px 0; cursor: pointer; }
+  .check input { width: 15px; height: 15px; accent-color: var(--accent); margin: 0; cursor: pointer; }
+  .subgroup { padding: 10px 0 4px 14px; border-left: 2px solid var(--panel-line); margin: 4px 0 8px 2px; }
+  .zonecard { background: #fff; border: 1px solid var(--panel-line); border-radius: 8px; padding: 12px; margin: 10px 0; }
+  .zonecard .ztitle { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
+  .walls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
+  .walls .wall { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .walls .wall input { width: 14px; height: 14px; accent-color: var(--accent); margin: 0; }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button { width: 30px; height: 30px; border: 1px solid var(--panel-line); background: #fff; border-radius: 6px; font-size: 16px; cursor: pointer; color: var(--ink); }
+  .stepper button:hover { background: var(--panel); }
+  .stepper .count { font-size: 14px; font-weight: 700; min-width: 18px; text-align: center; }
+  .stage { display: flex; flex-direction: column; height: 100vh; }
+  .toolbar { display: flex; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--panel-line); }
+  .btn { padding: 8px 14px; font-size: 13px; font-weight: 600; font-family: inherit; border-radius: 6px; cursor: pointer; border: 1px solid var(--ink); background: var(--ink); color: #fff; }
+  .btn.secondary { background: #fff; color: var(--ink); }
+  .btn:hover { opacity: 0.88; }
+  .canvas { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px; overflow: auto; background: #fff; }
+  .canvas svg { max-width: 100%; max-height: 100%; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 13px; padding: 9px 16px; border-radius: 8px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <h1>Site Plan Generator</h1>
+  <p class="sub">Build a restaurant site plan and export it as SVG.</p>
+
+  <fieldset>
+    <legend>Zones</legend>
+    <label>Number of zones</label>
+    <div class="stepper">
+      <button type="button" id="zoneMinus">–</button>
+      <span class="count" id="zoneCount">2</span>
+      <button type="button" id="zonePlus">+</button>
+    </div>
+    <div id="zoneList"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Top edge</legend>
+    <label class="check"><input type="checkbox" id="topStreet"> Street</label>
+    <div class="subgroup" id="topStreetGroup" hidden>
+      <input type="text" id="topStreetName" placeholder="Street name">
+    </div>
+    <label class="check"><input type="checkbox" id="topBand"> Labeled band</label>
+    <div class="subgroup" id="topBandGroup" hidden>
+      <label>Text</label>
+      <input type="text" id="topBandText" placeholder="e.g. Rossi's Trattoria or Entrance">
+      <div class="row">
+        <div>
+          <label>Size</label>
+          <select id="topBandSize">
+            <option value="s">Small</option>
+            <option value="m">Medium</option>
+            <option value="l" selected>Large</option>
+          </select>
+        </div>
+        <div>
+          <label>Align</label>
+          <select id="topBandAlign">
+            <option value="start">Left</option>
+            <option value="center" selected>Center</option>
+            <option value="end">Right</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Bottom edge</legend>
+    <label class="check"><input type="checkbox" id="botStreet"> Street</label>
+    <div class="subgroup" id="botStreetGroup" hidden>
+      <input type="text" id="botStreetName" placeholder="Street name">
+    </div>
+    <label class="check"><input type="checkbox" id="botBand"> Labeled band</label>
+    <div class="subgroup" id="botBandGroup" hidden>
+      <label>Text</label>
+      <input type="text" id="botBandText" placeholder="e.g. Rossi's Trattoria or Entrance">
+      <div class="row">
+        <div>
+          <label>Size</label>
+          <select id="botBandSize">
+            <option value="s">Small</option>
+            <option value="m">Medium</option>
+            <option value="l" selected>Large</option>
+          </select>
+        </div>
+        <div>
+          <label>Align</label>
+          <select id="botBandAlign">
+            <option value="start">Left</option>
+            <option value="center" selected>Center</option>
+            <option value="end">Right</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+</div>
+
+<div class="stage">
+  <div class="toolbar">
+    <button class="btn" id="downloadBtn">Download SVG</button>
+    <button class="btn secondary" id="copyBtn">Copy markup</button>
+  </div>
+  <div class="canvas" id="canvas"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MAX_ZONES = 4;
+const state = {
+  zoneCount: 2,
+  zones: Array.from({length: 4}, (_, i) => ({
+    label: "Zone " + (i+1),
+    walls: { top: false, right: false, bottom: false, left: false }
+  })),
+};
+
+// ---------- Zone list UI ----------
+const zoneList = document.getElementById("zoneList");
+function renderZoneList() {
+  zoneList.innerHTML = "";
+  for (let i = 0; i < state.zoneCount; i++) {
+    const z = state.zones[i];
+    const card = document.createElement("div");
+    card.className = "zonecard";
+    card.innerHTML = `
+      <div class="ztitle">Zone ${i + 1}</div>
+      <input type="text" data-zone="${i}" class="zlabel" value="${escAttr(z.label)}" placeholder="Zone label">
+      <div class="walls">
+        ${["top","right","bottom","left"].map(side => `
+          <label class="wall">
+            <input type="checkbox" data-zone="${i}" data-side="${side}" ${z.walls[side] ? "checked" : ""}>
+            ${side[0].toUpperCase()+side.slice(1)}
+          </label>`).join("")}
+      </div>`;
+    zoneList.appendChild(card);
+  }
+  zoneList.querySelectorAll(".zlabel").forEach(inp => {
+    inp.addEventListener("input", e => { state.zones[+e.target.dataset.zone].label = e.target.value; render(); });
+  });
+  zoneList.querySelectorAll(".walls input").forEach(inp => {
+    inp.addEventListener("change", e => {
+      state.zones[+e.target.dataset.zone].walls[e.target.dataset.side] = e.target.checked;
+      render();
+    });
+  });
+}
+document.getElementById("zonePlus").addEventListener("click", () => {
+  if (state.zoneCount < MAX_ZONES) { state.zoneCount++; document.getElementById("zoneCount").textContent = state.zoneCount; renderZoneList(); render(); }
+});
+document.getElementById("zoneMinus").addEventListener("click", () => {
+  if (state.zoneCount > 1) { state.zoneCount--; document.getElementById("zoneCount").textContent = state.zoneCount; renderZoneList(); render(); }
+});
+
+// ---------- Edge controls ----------
+function bindToggle(checkId, groupId) {
+  const cb = document.getElementById(checkId);
+  const grp = document.getElementById(groupId);
+  cb.addEventListener("change", () => { grp.hidden = !cb.checked; render(); });
+}
+["topStreet","topBand","botStreet","botBand"].forEach(id => bindToggle(id, id+"Group"));
+document.querySelectorAll('.panel input[type="text"], .panel select').forEach(el => el.addEventListener("input", render));
+
+function readEdge(p) {
+  return {
+    street: document.getElementById(p+"Street").checked,
+    streetName: document.getElementById(p+"StreetName").value.trim(),
+    band: document.getElementById(p+"Band").checked,
+    bandText: document.getElementById(p+"BandText").value.trim(),
+    bandSize: document.getElementById(p+"BandSize").value,
+    bandAlign: document.getElementById(p+"BandAlign").value,
+  };
+}
+
+// ---------- Geometry ----------
+const G = {
+  pad: 28,
+  zoneW: 150,
+  zoneH: 188,
+  gutter: 14,        // whitespace between all cards
+  bandH: 40,
+  roadH: 40,
+  roadGap: 18,       // gap between road and nearest card
+  radius: 9,
+};
+
+function bandWidth(size, totalW) {
+  if (size === "s") return Math.min(150, totalW);
+  if (size === "m") return totalW * 0.55;
+  return totalW;
+}
+
+function buildSVG() {
+  const g = G;
+  const top = readEdge("top");
+  const bot = readEdge("bot");
+  const n = state.zoneCount;
+  const zones = state.zones.slice(0, n);
+
+  const rowW = n * g.zoneW + (n - 1) * g.gutter;
+
+  // vertical stack heights
+  const topStreetBlk = top.street ? g.roadH + g.roadGap : 0;
+  const topBandBlk   = top.band   ? g.bandH + g.gutter  : 0;
+  const botBandBlk   = bot.band   ? g.gutter + g.bandH  : 0;
+  const botStreetBlk = bot.street ? g.roadGap + g.roadH : 0;
+  const topStack = topStreetBlk + topBandBlk;
+  const botStack = botBandBlk + botStreetBlk;
+
+  const svgW = rowW + g.pad * 2;
+  const svgH = topStack + g.zoneH + botStack + g.pad * 2;
+  const x0 = g.pad;
+  const yZones = g.pad + topStack;
+
+  const S = [];
+
+  // ----- Zone cards (square) -----
+  for (let i = 0; i < n; i++) {
+    const zx = x0 + i * (g.zoneW + g.gutter);
+    S.push(`<rect x="${zx}" y="${yZones}" width="${g.zoneW}" height="${g.zoneH}" class="zone"/>`);
+  }
+  // ----- Walls on card edges (square, full-length) -----
+  for (let i = 0; i < n; i++) {
+    const zx = x0 + i * (g.zoneW + g.gutter);
+    const w = zones[i].walls;
+    const L = zx, R = zx + g.zoneW, T = yZones, B = yZones + g.zoneH;
+    if (w.top)    S.push(`<line x1="${L}" y1="${T}" x2="${R}" y2="${T}" class="wall"/>`);
+    if (w.bottom) S.push(`<line x1="${L}" y1="${B}" x2="${R}" y2="${B}" class="wall"/>`);
+    if (w.left)   S.push(`<line x1="${L}" y1="${T}" x2="${L}" y2="${B}" class="wall"/>`);
+    if (w.right)  S.push(`<line x1="${R}" y1="${T}" x2="${R}" y2="${B}" class="wall"/>`);
+  }
+  // ----- Zone labels -----
+  for (let i = 0; i < n; i++) {
+    const zx = x0 + i * (g.zoneW + g.gutter);
+    S.push(`<text x="${zx + g.zoneW/2}" y="${yZones + g.zoneH/2}" class="zlab" text-anchor="middle" dominant-baseline="central">${esc(zones[i].label)}</text>`);
+  }
+
+  // ----- Band card -----
+  function drawBand(edge, bandY) {
+    if (!edge.band) return;
+    const bw = bandWidth(edge.bandSize, rowW);
+    let bx;
+    if (edge.bandAlign === "start") bx = x0;
+    else if (edge.bandAlign === "end") bx = x0 + rowW - bw;
+    else bx = x0 + (rowW - bw) / 2;
+    S.push(`<rect x="${bx}" y="${bandY}" width="${bw}" height="${g.bandH}" class="band"/>`);
+    if (edge.bandText) {
+      const big = (edge.bandSize !== "s");
+      S.push(`<text x="${bx + bw/2}" y="${bandY + g.bandH/2}" class="bandlab ${big ? 'big':'small'}" text-anchor="middle" dominant-baseline="central">${esc(edge.bandText)}</text>`);
+    }
+  }
+
+  // ----- Road -----
+  function drawRoad(edge, roadY) {
+    if (!edge.street) return;
+    const rx = g.pad * 0.3, rw = svgW - g.pad * 0.6, rh = g.roadH;
+    const cy = roadY + rh/2;
+    S.push(`<rect x="${rx}" y="${roadY}" width="${rw}" height="${rh}" class="road"/>`);
+    S.push(`<line x1="${rx}" y1="${roadY}" x2="${rx+rw}" y2="${roadY}" class="road-edge"/>`);
+    S.push(`<line x1="${rx}" y1="${roadY+rh}" x2="${rx+rw}" y2="${roadY+rh}" class="road-edge"/>`);
+    S.push(`<line x1="${rx+8}" y1="${cy}" x2="${rx+rw-8}" y2="${cy}" class="road-center"/>`);
+    if (edge.streetName) {
+      const w = edge.streetName.length * 8 + 26;
+      S.push(`<rect x="${svgW/2 - w/2}" y="${cy - 13}" width="${w}" height="26" class="road-plate"/>`);
+      S.push(`<text x="${svgW/2}" y="${cy}" class="streetlab" text-anchor="middle" dominant-baseline="central">${esc(edge.streetName)}</text>`);
+    }
+  }
+
+  // ----- Vertical placement (top-down) -----
+  let y = g.pad;
+  if (top.street) { drawRoad(top, y); y += g.roadH + g.roadGap; }
+  if (top.band)   { drawBand(top, y); y += g.bandH + g.gutter; }
+  // zones occupy [yZones, yZones+zoneH]
+  y = yZones + g.zoneH;
+  if (bot.band)   { y += g.gutter; drawBand(bot, y); y += g.bandH; }
+  if (bot.street) { y += g.roadGap; drawRoad(bot, y); }
+
+  const defs = `
+    <defs>
+      <style>
+        text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill:#2b3442; }
+        .zone { fill:#e9eef4; stroke:#c3d0e0; stroke-width:1; }
+        .zlab { font-size:15px; font-weight:700; }
+        .wall { stroke:#2b3442; stroke-width:4; stroke-linecap:square; fill:none; }
+        .band { fill:#e9eef4; stroke:#c3d0e0; stroke-width:1; }
+        .bandlab { fill:#2b3442; font-weight:700; }
+        .bandlab.big { font-size:15px; }
+        .bandlab.small { font-size:13px; }
+        .road { fill:#e9eef4; }
+        .road-edge { stroke:#c3d0e0; stroke-width:1.5; }
+        .road-center { stroke:#c3d0e0; stroke-width:2; stroke-dasharray:18 14; stroke-linecap:butt; }
+        .road-plate { fill:#e9eef4; }
+        .streetlab { font-size:15px; font-weight:700; }
+      </style>
+    </defs>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}">${defs}<rect x="0" y="0" width="${svgW}" height="${svgH}" fill="#ffffff"/>${S.join("")}</svg>`;
+}
+
+// ---------- Render / export ----------
+const canvas = document.getElementById("canvas");
+let currentSVG = "";
+function render() { currentSVG = buildSVG(); canvas.innerHTML = currentSVG; }
+
+document.getElementById("downloadBtn").addEventListener("click", () => {
+  const blob = new Blob([currentSVG], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "site-plan.svg";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  showToast("Downloaded site-plan.svg");
+});
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(currentSVG); showToast("SVG markup copied"); }
+  catch { showToast("Copy failed — select and copy manually"); }
+});
+
+// ---------- Utils ----------
+function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function escAttr(s){ return String(s).replace(/"/g,"&quot;"); }
+let toastTimer;
+function showToast(m){ const t=document.getElementById("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1800); }
+
+// ---------- Seed ----------
+document.getElementById("topStreet").checked = true;
+document.getElementById("topStreetGroup").hidden = false;
+document.getElementById("topStreetName").value = "Chestnut St.";
+document.getElementById("botBand").checked = true;
+document.getElementById("botBandGroup").hidden = false;
+document.getElementById("botBandText").value = "Rossi's Trattoria";
+
+renderZoneList();
+render();
+</script>
+</body>
+</html>
