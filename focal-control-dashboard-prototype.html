@@ -10,17 +10,20 @@
     --orange: #F97316;
     --led-on: #FFFFFF;
     --led-off: #4C5568;
-    --dome: #262E40;
-    --mid: #262E40;
-    --stroke1: #47546B;
-    --card: #111420;
-    --card-border: #334155;
     --page: #0A0D14;
     --panel: #0E1117;
     --title: #F3F4F6;
     --sub: #8B93A7;
     --accent: #10B981;
     --danger: #F87171;
+
+    /* Unified button system: every tappable target shares this fill/stroke/hover language */
+    --btn-fill: #262E40;
+    --btn-stroke: #7D879C;
+    --btn-stroke-hover: #E8EBF1;
+    --btn-fill-hover: #323C54;
+    --card-border: #334155;
+    --card: #111420;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
@@ -38,21 +41,28 @@
   /* Header */
   .header { display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .header-top { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; position: relative; }
-  .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; position: absolute; left: 0; }
-  .logo svg { width: 22px; height: 22px; }
+  .logo { display: flex; align-items: center; position: absolute; left: 0; }
+  .logo svg { width: 100px; height: auto; }
   .restaurant-name { font-weight: 800; font-size: 20px; }
   .status-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  /* ---- Shared button system: every tappable target uses this exact fill/stroke/hover ---- */
+  .btn {
+    background: var(--btn-fill); border: 1.5px solid var(--btn-stroke); border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+    cursor: pointer; font: inherit; color: #fff;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+  }
+  .btn:hover { border-color: var(--btn-stroke-hover); background: var(--btn-fill-hover); }
+  .btn:active { transform: scale(0.98); }
+  .btn:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
+
   .schedule-btn {
     display: inline-flex; align-items: center; gap: 10px;
-    background: var(--panel); border: 1px solid var(--card-border); border-radius: 12px;
-    padding: 12px 14px; cursor: default;
-    box-shadow: 0 6px 8px rgba(0,0,0,0.4);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    padding: 12px 14px;
   }
-  .schedule-btn:hover { border-color: #4d5a73; background: #131722; }
   .schedule-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
   .schedule-btn .text { font-size: 14px; color: #E5E7EB; }
-  .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.75; transition: opacity 0.15s ease; }
+  .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.85; transition: opacity 0.15s ease; }
   .schedule-btn:hover .pencil { opacity: 1; }
   .system-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #E5E7EB; }
   .system-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
@@ -67,42 +77,44 @@
   .quick-controls .buttons-row { display: flex; gap: 16px; flex-wrap: wrap; }
   .zone-select-card {
     display: inline-flex; align-items: center; gap: 10px;
-    background: #212638; border: 1.5px solid #4d546b; border-radius: 12px;
-    padding: 12px 18px; height: 56px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
-    cursor: pointer; font: inherit; color: inherit;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+    padding: 10px 18px; height: 44px;
   }
-  .zone-select-card:hover { border-color: #6b7591; background: #262c42; }
-  .zone-select-card:active { transform: scale(0.98); }
-  .zone-select-card .led-mini { display: flex; gap: 6px; }
-  .zone-select-card .led-mini i { width: 8px; height: 8px; border-radius: 50%; background: var(--led-off); }
-  .zone-select-card .led-mini i:last-child { background: var(--led-on); }
   .zone-select-card .label { font-size: 15px; font-weight: 600; color: #E5E7EB; white-space: nowrap; }
 
   /* Map */
   .map-canvas {
     background: var(--panel); border: 1px solid #262e40; border-radius: 12px;
-    padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+    padding: 24px; --fade-color: var(--panel);
+  }
+  .map-canvas.scroll-region::before, .map-canvas.scroll-region::after { top: 24px; bottom: 24px; }
+  .map-canvas-scroll {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    overflow-x: auto;
   }
   .street-bar {
-    width: 100%; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
+    width: 100%; min-width: 480px; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
     height: 44px; display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 600; color: #E5E7EB;
   }
-  .map-zones { display: flex; gap: 12px; width: 100%; }
+  /* The map is a spatial diagram, not reflowable content: zones never wrap, regardless of viewport width. */
+  .map-zones { display: flex; gap: 12px; width: 100%; min-width: 480px; flex-wrap: nowrap; }
   .map-zone-card {
-    flex: 1; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
-    height: 100px; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 700; color: #fff; cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+    flex: 1; min-width: 180px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    font-size: 14px; font-weight: 700; color: #fff; border-radius: 12px;
+    background: #111420; border: 1px solid var(--card-border);
+    cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .map-zone-card:hover { border-color: var(--purple); background: #171c2c; }
-  .map-zone-card:active { transform: scale(0.985); }
-  .map-zone-card:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  .map-zone-card:hover { border-color: #4d5a73; background: #171c2c; }
+  .map-zone-card:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
+  .map-zone-card .rail-labels {
+    display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--sub);
+    font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; text-transform: uppercase;
+  }
+  .map-zone-card .rail-labels .sep { color: var(--card-border); font-size: 14px; line-height: 1; }
   .map-entrance {
     background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
-    padding: 14px; font-size: 14px; font-weight: 700; color: #fff;
+    padding: 14px; font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap;
   }
 
   /* Zone sections */
@@ -111,55 +123,90 @@
     padding: 24px; scroll-margin-top: 24px;
   }
   .zone-section-header {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 12px; margin-bottom: 24px;
   }
-  .zone-title { font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 14px; text-transform: uppercase; color: #E5E7EB; }
+  .zone-title {
+    flex: none;
+    font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 14px; text-transform: uppercase; color: #E5E7EB;
+  }
   .set-all-btn {
+    flex: none;
     display: inline-flex; align-items: center; gap: 10px;
-    background: #212638; border: 1.5px solid #4d546b; border-radius: 12px;
-    padding: 12px 18px; height: 48px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
-    cursor: pointer; font: inherit; color: #fff; font-weight: 700; font-size: 14px;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
-  }
-  .set-all-btn:hover { border-color: #6b7591; background: #262c42; }
-  .set-all-btn:active { transform: scale(0.98); }
-  .set-all-btn .led-mini { display: flex; gap: 6px; }
-  .set-all-btn .led-mini i { width: 8px; height: 8px; border-radius: 50%; background: var(--led-off); }
-  .set-all-btn .led-mini i:last-child { background: var(--led-on); }
-
-  .heaters-row { display: flex; gap: 24px; flex-wrap: wrap; }
-  .rail-card {
-    background: #0e1119; border: 1px solid #262e40; border-radius: 14px; padding: 16px;
-    display: flex; gap: 12px;
+    padding: 10px 18px; height: 44px;
+    font-weight: 700; font-size: 14px;
   }
 
-  .heater { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100px; }
-  .heater.offline .pill-widget { opacity: 0.55; }
+  /* Heater rails mirror physical hardware layout, left-to-right — they must never wrap or shrink.
+     On narrow viewports the row scrolls horizontally instead, keeping every rail at full, tappable size. */
+  .scroll-region { position: relative; --fade-color: var(--card); }
+  .scroll-region::before, .scroll-region::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 32px; pointer-events: none;
+    z-index: 5; opacity: 0; transition: opacity 0.15s ease;
+  }
+  .scroll-region::before { left: 0; background: linear-gradient(to right, var(--fade-color), transparent); }
+  .scroll-region::after { right: 0; background: linear-gradient(to left, var(--fade-color), transparent); }
+  .scroll-region.can-scroll-start::before { opacity: 1; }
+  .scroll-region.can-scroll-end::after { opacity: 1; }
+  .scroll-region .scroll-hint {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(9,13,22,0.85); border: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--sub); pointer-events: none; z-index: 6;
+    opacity: 0; transition: opacity 0.15s ease;
+  }
+  .scroll-region .scroll-hint svg { width: 14px; height: 14px; }
+  .scroll-region .scroll-hint.left { left: 4px; }
+  .scroll-region .scroll-hint.right { right: 4px; }
+  .scroll-region.can-scroll-start .scroll-hint.left { opacity: 1; }
+  .scroll-region.can-scroll-end .scroll-hint.right { opacity: 1; }
+
+  .heaters-row-scroll { display: flex; gap: 56px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .heater-group {
+    display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none;
+    background: rgba(255,255,255,0.025); border-radius: 20px; padding: 14px 12px 12px;
+  }
+  .heater-group .rail-label {
+    font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub);
+    text-align: center;
+  }
+  .heater-group .rail-heaters { display: flex; gap: 2px; }
+
+  .heater { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100px; }
+  .heater.offline .pill-widget { opacity: 0.4; }
   .heater.offline svg .zone { cursor: not-allowed; pointer-events: none; }
-  .offline-badge {
-    display: none; align-items: center; gap: 4px; font-size: 10px; color: var(--sub);
-    margin-top: -4px;
+  .offline-icon {
+    display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 20px; height: 20px; color: var(--danger); pointer-events: none;
   }
-  .heater.offline .offline-badge { display: inline-flex; }
+  .heater.offline .offline-icon { display: block; }
+
+  /* Oval wrapper that ties the three buttons of a heater together, per Figma */
+  .pill-widget {
+    position: relative;
+    background: #090D16; border: 1px solid var(--card-border); border-radius: 34px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    padding: 2px; display: flex; align-items: center; justify-content: center;
+  }
 
   svg.pill-svg { display: block; touch-action: manipulation; width: 76px; height: auto; }
   .zone { cursor: pointer; outline: none; }
-  .zone:focus-visible .focusable { stroke: #6E8BFF; stroke-width: 2.5; }
-  .led { transition: fill 0.14s ease; }
+  .zone .focusable { transition: stroke 0.15s ease, fill 0.15s ease; }
+  .zone:hover .focusable:not(.hit-target) { stroke: var(--btn-stroke-hover); fill: var(--btn-fill-hover); }
+  .zone:focus-visible .focusable:not(.hit-target) { stroke: var(--btn-stroke-hover); stroke-width: 2.5; }
+  .led { transition: fill 0.14s ease, filter 0.14s ease; }
+  .led[fill="var(--led-on)"] { filter: drop-shadow(0 0 3px rgba(255,255,255,0.85)); }
   .flash { fill: #FFFFFF; opacity: 0; pointer-events: none; }
   .flash.go { animation: flash 0.4s ease-out; }
   @keyframes flash { 0% { opacity: 0.14; } 100% { opacity: 0; } }
 
   .overflow-btn {
-    background: #1f2433; border: 1px solid #40475c; border-radius: 8px; padding: 8px;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    padding: 8px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
   }
-  .overflow-btn:hover { border-color: #6b7591; background: #262c3e; }
   .overflow-btn svg { width: 16px; height: 12px; }
-  .overflow-btn svg rect { fill: #99A6B8; }
+  .overflow-btn svg rect { fill: #E5E7EB; }
 
   /* Footer legend */
   .legend { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--sub); padding-top: 8px; }
@@ -193,37 +240,32 @@
   .options-stack { display: flex; flex-direction: column; gap: 10px; }
   .option-row {
     display: flex; align-items: center; justify-content: space-between;
-    background: #1c1f2b; border: 1px solid #2d3244; border-radius: 12px;
-    padding: 16px; cursor: pointer; font: inherit; color: inherit; text-align: left;
-    transition: border-color 0.12s ease, background 0.12s ease;
+    padding: 16px; text-align: left;
   }
-  .option-row:hover { border-color: #4d5a73; background: #21253300; background: #232838; }
   .option-row .led-group { display: flex; gap: 5px; }
-  .option-row .led-group i { width: 8px; height: 8px; border-radius: 50%; background: #2d3244; }
-  .option-row .led-group i.on { background: #fff; }
-  .option-row .label { font-size: 15px; font-weight: 500; color: #8C92AC; display: flex; align-items: center; gap: 8px; }
-  .option-row.active { border-color: #fff; }
+  .option-row .led-group i { width: 8px; height: 8px; border-radius: 50%; background: #454f66; }
+  .option-row .led-group i.on { background: #fff; filter: drop-shadow(0 0 3px rgba(255,255,255,0.85)); }
+  .option-row .label { font-size: 15px; font-weight: 500; color: #E5E7EB; display: flex; align-items: center; gap: 8px; }
+  .option-row.active { border-color: var(--btn-stroke-hover); background: var(--btn-fill-hover); }
   .option-row.active .label { color: #fff; font-weight: 700; }
   .option-row.active .label::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
 
   .cancel-btn {
-    background: none; border: none; color: #8C92AC; font-size: 15px; font-weight: 600;
-    text-transform: uppercase; text-align: center; padding: 12px; cursor: pointer; font-family: inherit;
+    text-align: center; padding: 12px; font-weight: 600; text-transform: uppercase;
   }
-  .cancel-btn:hover { color: #fff; }
 
   /* Overflow action menu */
-  .overflow-sheet .actions { display: flex; flex-direction: column; gap: 4px; }
   .overflow-sheet .serial-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 4px; border-bottom: 1px solid #242936; margin-bottom: 8px;
+    padding: 10px 4px; border-bottom: 1px solid #242936; margin-bottom: 4px;
     font-size: 13px; color: #8C92AC;
   }
+  .copy-btn { padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .copy-btn svg { width: 14px; height: 14px; }
+  .overflow-sheet .actions { display: flex; flex-direction: column; gap: 10px; }
   .action-row {
-    display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-radius: 10px;
-    cursor: pointer; font-size: 14px; color: #E5E7EB; background: none; border: none; font-family: inherit; text-align: left;
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px; text-align: left; font-size: 14px;
   }
-  .action-row:hover { background: #1c1f2b; }
   .action-row.danger { color: var(--danger); }
   .action-row svg { width: 16px; height: 16px; flex: none; }
 
@@ -237,14 +279,12 @@
 
   @media (prefers-reduced-motion: reduce) {
     .flash.go { animation: none; }
-    .led, .schedule-btn, .zone-select-card, .set-all-btn, .map-zone-card { transition: none; }
+    .led, .btn, .zone .focusable { transition: none; }
   }
 
   @media (max-width: 720px) {
     .header-top { flex-direction: column; }
     .logo { position: static; }
-    .map-zones { flex-direction: column; }
-    .zone-section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   }
 </style>
 </head>
@@ -255,13 +295,22 @@
     <div class="header">
       <div class="header-top">
         <div class="logo">
-          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#fff"/></svg>
-          FOCAL
+          <svg viewBox="0 0 181 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10.483 4.56838C7.22284 4.56838 4.57007 7.22117 4.57007 10.4813C4.57007 13.7415 7.22284 16.3943 10.483 16.3943C13.7432 16.3943 16.396 13.7415 16.396 10.4813C16.396 7.22117 13.7432 4.56838 10.483 4.56838Z" fill="#FAFAF0"/>
+            <path d="M0.61084 26.604C1.2736 29.3242 2.44688 31.8559 4.10292 34.1314H12.6323C24.4876 34.1314 34.1332 24.4859 34.1332 12.6306V4.10118C31.8576 2.44513 29.326 1.27189 26.6057 0.609125V26.604H0.61084Z" fill="#FAFAF0"/>
+            <path d="M43.0017 21.4991C43.0017 15.1951 40.2624 9.25619 35.4742 5.15848V35.4725H5.16016C9.25787 40.2607 15.1968 43 21.5008 43C33.3561 43 43.0017 33.3545 43.0017 21.4991Z" fill="#FAFAF0"/>
+            <path d="M0 21.4991C0 22.7606 0.110774 24.0256 0.328811 25.2629H3.76373C15.6191 25.2629 25.2646 15.6173 25.2646 3.762V0.327055C22.7918 -0.109018 20.21 -0.109018 17.7371 0.327055V17.7354H0.328811C0.110774 18.9727 0 20.2376 0 21.4991Z" fill="#FAFAF0"/>
+            <path d="M128.019 17.4758H132.492C130.764 12.3191 125.972 8.86683 120.516 8.86683C113.551 8.86683 107.884 14.5341 107.884 21.4991C107.884 28.4642 113.551 34.1314 120.516 34.1314C125.972 34.1314 130.762 30.6792 132.492 25.5224H128.019C126.527 28.2964 123.66 30.0147 120.518 30.0147C115.821 30.0147 112.002 26.1939 112.002 21.4991C112.002 16.8044 115.823 12.9836 120.518 12.9836C123.66 12.9836 126.527 14.7036 128.019 17.4758Z" fill="#FAFAF0"/>
+            <path d="M169.096 34.1314H180.874V30.3798H168.44V8.86683H164.324V29.3588C164.324 31.9909 166.464 34.1314 169.096 34.1314Z" fill="#FAFAF0"/>
+            <path d="M92.3974 8.86683C85.4324 8.86683 79.7651 14.5341 79.7651 21.4991C79.7651 28.4642 85.4324 34.1314 92.3974 34.1314C99.3625 34.1314 105.03 28.4642 105.03 21.4991C105.03 14.5341 99.3625 8.86683 92.3974 8.86683ZM92.3974 30.0147C87.701 30.0147 83.8819 26.1939 83.8819 21.4991C83.8819 16.8044 87.7027 12.9836 92.3974 12.9836C97.0922 12.9836 100.913 16.8044 100.913 21.4991C100.913 26.1939 97.0922 30.0147 92.3974 30.0147Z" fill="#FAFAF0"/>
+            <path d="M75.1467 19.6233H64.1878V12.6185H76.6211V8.86684H60.071V34.1314H64.1878V23.375H75.1467V19.6233Z" fill="#FAFAF0"/>
+            <path d="M151.499 11.5836C150.816 9.93453 149.22 8.86683 147.435 8.86683C145.649 8.86683 144.053 9.9328 143.37 11.5836L134.031 34.1314H138.486L141.33 27.2685H153.543L156.386 34.1314H160.842L151.503 11.5836H151.499ZM142.882 23.5168L147.397 12.6185H147.473L151.987 23.5168H142.882Z" fill="#FAFAF0"/>
+          </svg>
         </div>
         <div class="restaurant-name">Little Shucker</div>
       </div>
       <div class="status-row">
-        <button class="schedule-btn" id="scheduleBtn" type="button" aria-label="Edit schedule (not available in this prototype)">
+        <button class="btn schedule-btn" id="scheduleBtn" type="button" aria-label="Edit schedule">
           <span class="dot"></span>
           <span class="text mono">Schedule: Active until 10:30 PM</span>
           <svg class="pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#E5E7EB">
@@ -279,16 +328,13 @@
     <div class="quick-controls">
       <div class="section-label mono">Quick Controls</div>
       <div class="buttons-row">
-        <button class="zone-select-card" data-scope="all" type="button">
-          <span class="led-mini"><i></i><i></i><i></i></span>
-          <span class="label">Set All Heaters</span>
+        <button class="btn zone-select-card" data-scope="all" type="button">
+          <span class="label">Set All Zones Heat</span>
         </button>
-        <button class="zone-select-card" data-scope="1" type="button">
-          <span class="led-mini"><i></i><i></i><i></i></span>
-          <span class="label">Set Zone 1</span>
+        <button class="btn zone-select-card" data-scope="1" type="button">
+          <span class="label">Set Zone 1 Heat</span>
         </button>
-        <button class="zone-select-card" data-scope="2" type="button">
-          <span class="led-mini"><i></i><i></i><i></i></span>
+        <button class="btn zone-select-card" data-scope="2" type="button">
           <span class="label">Set Zone 2</span>
         </button>
       </div>
@@ -297,52 +343,83 @@
     <!-- Restaurant Map -->
     <div>
       <div class="section-label mono">Restaurant Map</div>
-      <div class="map-canvas">
-        <div class="street-bar">Clement St</div>
-        <div class="map-zones">
-          <div class="map-zone-card" data-jump="1" role="button" tabindex="0">Zone 1</div>
-          <div class="map-zone-card" data-jump="2" role="button" tabindex="0">Zone 2</div>
+      <div class="map-canvas scroll-region" id="mapCanvas">
+        <div class="scroll-hint left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="scroll-hint right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="map-canvas-scroll" id="mapCanvasScroll">
+          <div class="street-bar">Clement St</div>
+          <div class="map-zones">
+            <button class="map-zone-card" data-jump="1" type="button">
+              Zone 1
+              <span class="rail-labels"><span>Rail 1</span><span class="sep">&middot;</span><span>Rail 2</span></span>
+            </button>
+            <button class="map-zone-card" data-jump="2" type="button">
+              Zone 2
+              <span class="rail-labels"><span>Rail 3</span><span class="sep">&middot;</span><span>Rail 4</span><span class="sep">&middot;</span><span>Rail 5</span></span>
+            </button>
+          </div>
+          <div class="map-entrance">Restaurant Entrance</div>
         </div>
-        <div class="map-entrance">Restaurant Entrance</div>
       </div>
     </div>
 
-    <!-- Zone 1 -->
+    <!-- Zone 1: two groups of three -->
     <div class="zone-section" id="zone-1">
       <div class="zone-section-header">
         <div class="zone-title mono">Zone 1</div>
-        <button class="set-all-btn" data-scope="1" type="button">
-          <span class="led-mini"><i></i><i></i><i></i></span>
-          <span>Set Zone 1</span>
+        <button class="btn set-all-btn" data-scope="1" type="button">
+          <span>Set Zone 1 Heat</span>
         </button>
       </div>
-      <div class="heaters-row">
-        <div class="rail-card" data-rail></div>
-        <div class="rail-card" data-rail></div>
-        <div class="rail-card" data-rail></div>
+      <div class="heaters-row scroll-region">
+        <div class="scroll-hint left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="scroll-hint right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="heaters-row-scroll">
+          <div class="heater-group">
+            <div class="rail-label mono">Rail 1</div>
+            <div class="rail-heaters" data-group></div>
+          </div>
+          <div class="heater-group">
+            <div class="rail-label mono">Rail 2</div>
+            <div class="rail-heaters" data-group></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Zone 2 -->
+    <!-- Zone 2: three groups of two -->
     <div class="zone-section" id="zone-2">
       <div class="zone-section-header">
         <div class="zone-title mono">Zone 2</div>
-        <button class="set-all-btn" data-scope="2" type="button">
-          <span class="led-mini"><i></i><i></i><i></i></span>
-          <span>Set Zone 2</span>
+        <button class="btn set-all-btn" data-scope="2" type="button">
+          <span>Set Zone 2 Heat</span>
         </button>
       </div>
-      <div class="heaters-row">
-        <div class="rail-card" data-rail></div>
-        <div class="rail-card" data-rail></div>
+      <div class="heaters-row scroll-region">
+        <div class="scroll-hint left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="scroll-hint right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+        <div class="heaters-row-scroll">
+          <div class="heater-group">
+            <div class="rail-label mono">Rail 3</div>
+            <div class="rail-heaters" data-group></div>
+          </div>
+          <div class="heater-group">
+            <div class="rail-label mono">Rail 4</div>
+            <div class="rail-heaters" data-group></div>
+          </div>
+          <div class="heater-group">
+            <div class="rail-label mono">Rail 5</div>
+            <div class="rail-heaters" data-group></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Footer legend -->
     <div class="legend">
-      <span><i class="swatch" style="background:var(--purple)"></i>Upper spot</span>
-      <span><i class="swatch" style="background:var(--orange)"></i>Lower spot</span>
-      <span><i class="swatch white"></i>Lit = heat level</span>
+      <span><i class="swatch" style="background:var(--purple)"></i>Spot 1</span>
+      <span><i class="swatch" style="background:var(--orange)"></i>Spot 2</span>
+      <span><i class="swatch white"></i>Heat level</span>
       <span><i class="swatch ring"></i>Off</span>
     </div>
   </div>
@@ -360,7 +437,7 @@
       <div class="options-stack" id="levelOptions">
         <!-- options injected -->
       </div>
-      <button class="cancel-btn" id="levelCancelBtn" type="button">Cancel</button>
+      <button class="btn cancel-btn" id="levelCancelBtn" type="button">Cancel</button>
     </div>
   </div>
 
@@ -371,15 +448,26 @@
         <div class="title" id="overflowModalTitle" style="font-size:16px;">Heater Actions</div>
       </div>
       <div class="serial-row">
-        <span class="mono" id="overflowSerial">DUO02-2603-SF1-00084</span>
-        <span>📋</span>
+        <span class="mono" id="overflowSerial"></span>
+        <button class="btn copy-btn" id="overflowCopyBtn" type="button" aria-label="Copy serial number">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
       </div>
       <div class="actions">
-        <button class="action-row" data-action="identify" type="button">🔍 Identify heater</button>
-        <button class="action-row" data-action="swap" type="button">🔄 Swap heater</button>
-        <button class="action-row danger" data-action="remove" type="button">🗑 Remove heater</button>
+        <button class="btn action-row" data-action="identify" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Identify heater
+        </button>
+        <button class="btn action-row" data-action="swap" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Swap heater
+        </button>
+        <button class="btn action-row danger" data-action="remove" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          Remove heater
+        </button>
       </div>
-      <button class="cancel-btn" id="overflowCancelBtn" type="button">Cancel</button>
+      <button class="btn cancel-btn" id="overflowCancelBtn" type="button">Cancel</button>
     </div>
   </div>
 
@@ -392,17 +480,21 @@
 
   function nextDown(level) { return level === 0 ? 3 : level - 1; }
 
+  // Zone 1: two groups of three. Zone 2: three groups of two. "rail" selects the group within a zone.
+  // "id" is an internal key only (never shown in UI); "serial" is the customer-facing hardware serial.
   const HEATERS = [
-    { id: "HT-01", zone: 1, rail: 0, label: "HT-01" },
-    { id: "HT-02", zone: 1, rail: 0, label: "HT-02" },
-    { id: "HT-03", zone: 1, rail: 1, label: "HT-03" },
-    { id: "HT-04", zone: 1, rail: 1, label: "HT-04" },
-    { id: "HT-05", zone: 1, rail: 2, label: "HT-05" },
-    { id: "HT-06", zone: 1, rail: 2, label: "HT-06", offline: true },
-    { id: "HT-07", zone: 2, rail: 0, label: "HT-07" },
-    { id: "HT-08", zone: 2, rail: 0, label: "HT-08" },
-    { id: "HT-09", zone: 2, rail: 1, label: "HT-09" },
-    { id: "HT-10", zone: 2, rail: 1, label: "HT-10" },
+    { id: "HT-01", zone: 1, rail: 0, serial: "DUO02-2603-SF1-00081" },
+    { id: "HT-02", zone: 1, rail: 0, serial: "DUO02-2603-SF1-00082" },
+    { id: "HT-03", zone: 1, rail: 0, serial: "DUO02-2603-SF1-00083" },
+    { id: "HT-04", zone: 1, rail: 1, serial: "DUO02-2603-SF1-00084" },
+    { id: "HT-05", zone: 1, rail: 1, serial: "DUO02-2603-SF1-00085" },
+    { id: "HT-06", zone: 1, rail: 1, serial: "DUO02-2603-SF1-00086", offline: true },
+    { id: "HT-07", zone: 2, rail: 0, serial: "DUO02-2603-SF1-00087" },
+    { id: "HT-08", zone: 2, rail: 0, serial: "DUO02-2603-SF1-00088" },
+    { id: "HT-09", zone: 2, rail: 1, serial: "DUO02-2603-SF1-00089" },
+    { id: "HT-10", zone: 2, rail: 1, serial: "DUO02-2603-SF1-00090", offline: true },
+    { id: "HT-11", zone: 2, rail: 2, serial: "DUO02-2603-SF1-00091" },
+    { id: "HT-12", zone: 2, rail: 2, serial: "DUO02-2603-SF1-00092" },
   ];
 
   const state = {};
@@ -411,37 +503,52 @@
   });
 
   function buildSVG(hid) {
-    const W = 76, H = 196;
-    const cx = W / 2;
+    // Geometry mirrors Figma's pill-widget flex layout exactly:
+    // outer pill padding 4px, 68px-wide content column, 4px gap between all five stacked children.
+    const PAD = 4, GAP = 4;
+    const W = 76;
     const bodyW = 68;
     const bx = (W - bodyW) / 2;
+    const cx = W / 2;
 
-    const topY = 4, topH = 48, gap = 8;
-    const midY = topY + topH + gap, midH = 54;
-    const botY = midY + midH + gap, botH = 48;
+    const topH = 48, ledH = 11, midH = 54, botH = 48;
     const rOuter = 34, rInner = 8;
+
+    const topY = PAD;
+    const topRowY = topY + topH + GAP + ledH / 2;
+    const midY = topY + topH + GAP + ledH + GAP;
+    const botRowY = midY + midH + GAP + ledH / 2;
+    const botY = midY + midH + GAP + ledH + GAP;
+    const H = botY + botH + PAD;
 
     const dotR = 3.5, dotGap = 15;
     const groupW = dotGap * 2;
     const gx0 = cx - groupW / 2;
     const ledX = [gx0, gx0 + dotGap, gx0 + dotGap * 2];
-    const topRowY = topY + topH + gap / 2;
-    const botRowY = midY + midH + gap / 2;
 
     const idR = 2;
     const topIdY = topY + topH * 0.46;
     const botIdY = botY + botH * 0.46;
     const midCx = cx, midCy = midY + midH / 2, midDotGap = 6;
 
+    const domeCorner = 6; // slight rounding where the dome's straight sides meet its flat edge
     function topPath() {
-      return 'M ' + bx + ' ' + (topY + topH) + ' L ' + bx + ' ' + (topY + rOuter) +
-             ' A ' + rOuter + ' ' + rOuter + ' 0 0 1 ' + (bx + bodyW) + ' ' + (topY + rOuter) +
-             ' L ' + (bx + bodyW) + ' ' + (topY + topH) + ' Z';
+      return 'M ' + bx + ' ' + (topY + topH - domeCorner) + ' ' +
+             'L ' + bx + ' ' + (topY + rOuter) + ' ' +
+             'A ' + rOuter + ' ' + rOuter + ' 0 0 1 ' + (bx + bodyW) + ' ' + (topY + rOuter) + ' ' +
+             'L ' + (bx + bodyW) + ' ' + (topY + topH - domeCorner) + ' ' +
+             'Q ' + (bx + bodyW) + ' ' + (topY + topH) + ' ' + (bx + bodyW - domeCorner) + ' ' + (topY + topH) + ' ' +
+             'L ' + (bx + domeCorner) + ' ' + (topY + topH) + ' ' +
+             'Q ' + bx + ' ' + (topY + topH) + ' ' + bx + ' ' + (topY + topH - domeCorner) + ' Z';
     }
     function botPath() {
-      return 'M ' + bx + ' ' + botY + ' L ' + bx + ' ' + (botY + botH - rOuter) +
-             ' A ' + rOuter + ' ' + rOuter + ' 0 0 0 ' + (bx + bodyW) + ' ' + (botY + botH - rOuter) +
-             ' L ' + (bx + bodyW) + ' ' + botY + ' Z';
+      return 'M ' + bx + ' ' + (botY + domeCorner) + ' ' +
+             'L ' + bx + ' ' + (botY + botH - rOuter) + ' ' +
+             'A ' + rOuter + ' ' + rOuter + ' 0 0 0 ' + (bx + bodyW) + ' ' + (botY + botH - rOuter) + ' ' +
+             'L ' + (bx + bodyW) + ' ' + (botY + domeCorner) + ' ' +
+             'Q ' + (bx + bodyW) + ' ' + botY + ' ' + (bx + bodyW - domeCorner) + ' ' + botY + ' ' +
+             'L ' + (bx + domeCorner) + ' ' + botY + ' ' +
+             'Q ' + bx + ' ' + botY + ' ' + bx + ' ' + (botY + domeCorner) + ' Z';
     }
     function ledRow(target, cy) {
       let s = '';
@@ -454,27 +561,27 @@
 
     return '' +
     '<svg class="pill-svg" viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="' + hid + ' heater control">' +
-      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Upper spot">' +
-        '<path class="focusable" d="' + topPath() + '" fill="var(--dome)" stroke="var(--stroke1)" stroke-width="1.5"/>' +
+      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Spot 1">' +
+        '<path class="focusable" d="' + topPath() + '" fill="var(--btn-fill)" stroke="var(--btn-stroke)" stroke-width="1.5"/>' +
         '<circle cx="' + cx + '" cy="' + topIdY + '" r="' + idR + '" fill="var(--purple)"/>' +
         '<path class="flash" d="' + topPath() + '"/>' +
       '</g>' +
-      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Upper spot level">' +
-        '<rect class="focusable" x="' + (ledX[0] - 8) + '" y="' + (topRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
+      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Spot 2">' +
+        '<rect class="focusable hit-target" x="' + (ledX[0] - 8) + '" y="' + (topRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
         ledRow("top", topRowY) +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="both" tabindex="0" role="button" aria-label="Both spots">' +
-        '<rect class="focusable" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '" fill="var(--mid)" stroke="var(--stroke1)" stroke-width="1.5"/>' +
+        '<rect class="focusable" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '" fill="var(--btn-fill)" stroke="var(--btn-stroke)" stroke-width="1.5"/>' +
         '<circle cx="' + midCx + '" cy="' + (midCy - midDotGap) + '" r="' + idR + '" fill="var(--purple)"/>' +
         '<circle cx="' + midCx + '" cy="' + (midCy + midDotGap) + '" r="' + idR + '" fill="var(--orange)"/>' +
         '<rect class="flash" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '"/>' +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot level">' +
-        '<rect class="focusable" x="' + (ledX[0] - 8) + '" y="' + (botRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
+        '<rect class="focusable hit-target" x="' + (ledX[0] - 8) + '" y="' + (botRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
         ledRow("bottom", botRowY) +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot">' +
-        '<path class="focusable" d="' + botPath() + '" fill="var(--dome)" stroke="var(--stroke1)" stroke-width="1.5"/>' +
+        '<path class="focusable" d="' + botPath() + '" fill="var(--btn-fill)" stroke="var(--btn-stroke)" stroke-width="1.5"/>' +
         '<circle cx="' + cx + '" cy="' + botIdY + '" r="' + idR + '" fill="var(--orange)"/>' +
         '<path class="flash" d="' + botPath() + '"/>' +
       '</g>' +
@@ -529,17 +636,21 @@
   });
 
   [1, 2].forEach((zoneNum) => {
-    const railCards = document.querySelectorAll('#zone-' + zoneNum + ' [data-rail]');
+    const groupEls = document.querySelectorAll('#zone-' + zoneNum + ' [data-group]');
     rails[zoneNum].forEach((heatersInRail, railIdx) => {
-      const card = railCards[railIdx];
+      const card = groupEls[railIdx];
       if (!card || !heatersInRail) return;
       heatersInRail.forEach((h) => {
         const col = document.createElement('div');
         col.className = 'heater' + (h.offline ? ' offline' : '');
         col.innerHTML =
-          '<div class="pill-widget" id="heater-' + h.id + '">' + buildSVG(h.id) + '</div>' +
-          '<div class="offline-badge">⛔︎ Offline</div>' +
-          '<button class="overflow-btn" data-overflow="' + h.id + '" type="button" aria-label="' + h.id + ' actions">' +
+          '<div class="pill-widget" id="heater-' + h.id + '">' +
+            buildSVG(h.id) +
+            '<svg class="offline-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+              '<path d="M9.94026 4.27441C11.0677 4.59927 12.0954 5.20232 12.9289 6.02813C13.7623 6.85394 14.3749 7.87602 14.7102 9.00041H16.5001C17.2252 9.00042 17.9394 9.17562 18.5822 9.51109C19.2249 9.84656 19.7771 10.3324 20.1917 10.9272C20.6063 11.522 20.871 12.2081 20.9633 12.9272C21.0557 13.6464 20.9729 14.3772 20.7221 15.0574M17.7955 17.8103C17.3751 17.9365 16.9385 18.0005 16.4995 18.0003H7.99968C6.43068 18 4.90726 17.4726 3.67392 16.5027C2.44059 15.5328 1.56885 14.1767 1.19863 12.652C0.828416 11.1272 0.981182 9.52235 1.63241 8.09485C2.28364 6.66736 3.39557 5.50005 4.78974 4.78027M1 1L20.9996 21"/>' +
+            '</svg>' +
+          '</div>' +
+          '<button class="btn overflow-btn" data-overflow="' + h.id + '" type="button" aria-label="' + h.id + ' actions">' +
             '<svg viewBox="0 0 16 12"><rect x="1" y="0" width="14" height="1.5" rx="0.75"/><rect x="1" y="5.25" width="14" height="1.5" rx="0.75"/><rect x="1" y="10.5" width="14" height="1.5" rx="0.75"/></svg>' +
           '</button>';
         card.appendChild(col);
@@ -548,6 +659,23 @@
   });
 
   HEATERS.forEach((h) => render(h.id));
+
+  // ---- Scroll affordance: fade edges + chevrons show when a scroll-region has more content off-screen ----
+  function setupScrollRegion(region, scroller) {
+    function update() {
+      const canLeft = scroller.scrollLeft > 2;
+      const canRight = scroller.scrollLeft < scroller.scrollWidth - scroller.clientWidth - 2;
+      region.classList.toggle('can-scroll-start', canLeft);
+      region.classList.toggle('can-scroll-end', canRight);
+    }
+    scroller.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
+  setupScrollRegion(document.getElementById('mapCanvas'), document.getElementById('mapCanvasScroll'));
+  document.querySelectorAll('.heaters-row.scroll-region').forEach((region) => {
+    setupScrollRegion(region, region.querySelector('.heaters-row-scroll'));
+  });
 
   // ---- Individual heater tap handling ----
   document.addEventListener('click', (e) => {
@@ -594,7 +722,7 @@
     levelOptions.innerHTML = LEVELS.slice().reverse().map((lvl) => {
       const idx = LEVELS.indexOf(lvl);
       return (
-        '<button class="option-row" data-level="' + idx + '" type="button">' +
+        '<button class="btn option-row" data-level="' + idx + '" type="button">' +
           '<span class="led-group">' + dotsForLevel(idx) + '</span>' +
           '<span class="label">' + LEVEL_LABEL[lvl] + '</span>' +
         '</button>'
@@ -642,7 +770,8 @@
     const btn = e.target.closest('[data-overflow]');
     if (!btn) return;
     overflowHeaterId = btn.getAttribute('data-overflow');
-    document.getElementById('overflowModalTitle').textContent = overflowHeaterId + ' — Heater Actions';
+    const meta = HEATERS.find((h) => h.id === overflowHeaterId);
+    document.getElementById('overflowSerial').textContent = meta ? meta.serial : '';
     overflowScrim.classList.add('open');
   });
 
@@ -650,9 +779,20 @@
   document.getElementById('overflowCancelBtn').addEventListener('click', closeOverflowModal);
   overflowScrim.addEventListener('click', (e) => { if (e.target === overflowScrim) closeOverflowModal(); });
 
+  document.getElementById('overflowCopyBtn').addEventListener('click', () => {
+    const meta = HEATERS.find((h) => h.id === overflowHeaterId);
+    const serial = meta ? meta.serial : '';
+    if (navigator.clipboard && serial) {
+      navigator.clipboard.writeText(serial).catch(() => {});
+    }
+    showToast('Copied serial number: ' + serial);
+  });
+
   document.querySelectorAll('.action-row').forEach((btn) => {
     btn.addEventListener('click', () => {
-      showToast((overflowHeaterId || '') + ': ' + btn.textContent.trim());
+      const meta = HEATERS.find((h) => h.id === overflowHeaterId);
+      const label = btn.textContent.trim();
+      showToast((meta ? meta.serial : '') + ': ' + label);
       closeOverflowModal();
     });
   });
