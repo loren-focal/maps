@@ -61,6 +61,7 @@
     padding: 12px 14px;
   }
   .schedule-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+  .schedule-btn .dot.inactive { background: var(--sub); }
   .schedule-btn .text { font-size: 14px; color: #E5E7EB; }
   .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.85; transition: opacity 0.15s ease; }
   .schedule-btn:hover .pencil { opacity: 1; }
@@ -81,25 +82,23 @@
   }
   .zone-select-card .label { font-size: 15px; font-weight: 600; color: #E5E7EB; white-space: nowrap; }
 
-  /* Map */
-  .map-canvas {
-    background: var(--panel); border: 1px solid #262e40; border-radius: 12px;
-    padding: 24px; --fade-color: var(--panel);
-  }
-  .map-canvas.scroll-region::before, .map-canvas.scroll-region::after { top: 24px; bottom: 24px; }
+  /* Map — no outer panel/frame; the individual zone/street/entrance boxes below carry the visual weight instead,
+     so the map conserves horizontal space and doesn't need its own bordered container. */
+  .map-canvas { --fade-color: var(--page); }
+  .map-canvas.scroll-region::before, .map-canvas.scroll-region::after { top: 0; bottom: 0; }
   .map-canvas-scroll {
     display: flex; flex-direction: column; align-items: center; gap: 16px;
     overflow-x: auto;
   }
   .street-bar {
-    width: 100%; min-width: 480px; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
+    width: 100%; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
     height: 44px; display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 600; color: #E5E7EB;
   }
-  /* The map is a spatial diagram, not reflowable content: zones never wrap, regardless of viewport width. */
-  .map-zones { display: flex; gap: 12px; width: 100%; min-width: 480px; flex-wrap: nowrap; }
+  /* The map is a spatial diagram: zones never wrap. They shrink to fit the viewport instead of forcing a scroll. */
+  .map-zones { display: flex; gap: 12px; width: 100%; flex-wrap: nowrap; }
   .map-zone-card {
-    flex: 1; min-width: 180px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    flex: 1; min-width: 0; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
     font-size: 14px; font-weight: 700; color: #fff; border-radius: 12px;
     background: #111420; border: 1px solid var(--card-border);
     cursor: pointer; font-family: inherit;
@@ -110,6 +109,7 @@
   .map-zone-card .rail-labels {
     display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--sub);
     font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; text-transform: uppercase;
+    max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   }
   .map-zone-card .rail-labels .sep { color: var(--card-border); font-size: 14px; line-height: 1; }
   .map-entrance {
@@ -117,13 +117,14 @@
     padding: 14px; font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap;
   }
 
-  /* Zone sections */
+  /* Zone sections — no outer card/frame; the heater rail "shelf" backgrounds carry the visual grouping instead. */
   .zone-section {
-    background: var(--card); border: 1px solid var(--card-border); border-radius: 16px;
-    padding: 24px; scroll-margin-top: 24px;
+    scroll-margin-top: 24px;
   }
+  .zone-section + .zone-section { margin-top: 8px; }
   .zone-section-header {
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 12px; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 16px;
+    margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border);
   }
   .zone-title {
     flex: none;
@@ -311,8 +312,8 @@
       </div>
       <div class="status-row">
         <button class="btn schedule-btn" id="scheduleBtn" type="button" aria-label="Edit schedule">
-          <span class="dot"></span>
-          <span class="text mono">Schedule: Active until 10:30 PM</span>
+          <span class="dot" id="scheduleDot"></span>
+          <span class="text mono" id="scheduleStatusText">Schedule: Active until 10:30 PM</span>
           <svg class="pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#E5E7EB">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
           </svg>
@@ -326,16 +327,16 @@
 
     <!-- Quick Controls -->
     <div class="quick-controls">
-      <div class="section-label mono">Quick Controls</div>
+      <div class="section-label mono">Set Heat Quickly</div>
       <div class="buttons-row">
         <button class="btn zone-select-card" data-scope="all" type="button">
-          <span class="label">Set All Zones Heat</span>
+          <span class="label">All Zones</span>
         </button>
         <button class="btn zone-select-card" data-scope="1" type="button">
-          <span class="label">Set Zone 1 Heat</span>
+          <span class="label">Zone 1</span>
         </button>
         <button class="btn zone-select-card" data-scope="2" type="button">
-          <span class="label">Set Zone 2</span>
+          <span class="label">Zone 2</span>
         </button>
       </div>
     </div>
@@ -475,6 +476,101 @@
 
 <script>
 (function () {
+  document.getElementById('scheduleBtn').addEventListener('click', () => {
+    window.location.href = 'focal-scheduling-prototype.html';
+  });
+
+  // ---- Schedule status, shared with focal-scheduling-prototype.html via localStorage ----
+  const SCHEDULE_STORAGE_KEY = "focal-schedule-state";
+  const SCHEDULE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  // Real current day/time. SCHEDULE_DAYS is Monday-first; JS getDay() is Sunday-first (0=Sun), so remap.
+  function getScheduleNowDayIdx() {
+    return (new Date().getDay() + 6) % 7;
+  }
+  function getScheduleNowMin() {
+    const d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  }
+
+  // Mirrors focal-scheduling-prototype.html's DEFAULT_STATE so first-load (before that page is ever visited) matches.
+  const SCHEDULE_DEFAULT_STATE = {
+    on: true,
+    days: SCHEDULE_DAYS.map((d, i) => ({
+      closed: i === 2,
+      start: "11:30",
+      end: i <= 1 ? "18:00" : "22:00",
+    })),
+  };
+
+  function loadScheduleState() {
+    try {
+      const raw = localStorage.getItem(SCHEDULE_STORAGE_KEY);
+      if (!raw) return SCHEDULE_DEFAULT_STATE;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.days) || parsed.days.length !== 7) return SCHEDULE_DEFAULT_STATE;
+      return parsed;
+    } catch (e) {
+      return SCHEDULE_DEFAULT_STATE;
+    }
+  }
+
+  function scheduleToMinutes(t) {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  }
+  function scheduleTo12(t) {
+    let [h, m] = t.split(":").map(Number);
+    const ap = h >= 12 ? "PM" : "AM";
+    h = h % 12; if (h === 0) h = 12;
+    return h + ":" + String(m).padStart(2, "0") + " " + ap;
+  }
+
+  function renderScheduleStatus() {
+    const dotEl = document.getElementById('scheduleDot');
+    const textEl = document.getElementById('scheduleStatusText');
+    const sched = loadScheduleState();
+    if (!sched || !sched.on) {
+      dotEl.className = 'dot inactive';
+      textEl.textContent = 'Schedule: Off';
+      return;
+    }
+    const nowDayIdx = getScheduleNowDayIdx();
+    const nowMin = getScheduleNowMin();
+    const today = sched.days[nowDayIdx];
+    const activeNow = !today.closed
+      && nowMin >= scheduleToMinutes(today.start)
+      && nowMin < scheduleToMinutes(today.end);
+
+    if (activeNow) {
+      dotEl.className = 'dot active';
+      textEl.textContent = 'Schedule: Active until ' + scheduleTo12(today.end);
+      return;
+    }
+
+    dotEl.className = 'dot inactive';
+    if (!today.closed && nowMin < scheduleToMinutes(today.start)) {
+      textEl.textContent = 'Schedule: Inactive until ' + scheduleTo12(today.start);
+      return;
+    }
+    for (let offset = 1; offset <= 7; offset++) {
+      const idx = (nowDayIdx + offset) % 7;
+      const day = sched.days[idx];
+      if (!day.closed) {
+        textEl.textContent = 'Schedule: Inactive until ' + SCHEDULE_DAYS[idx] + ', ' + scheduleTo12(day.start);
+        return;
+      }
+    }
+    textEl.textContent = 'Schedule: Inactive';
+  }
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === SCHEDULE_STORAGE_KEY) renderScheduleStatus();
+  });
+
+  renderScheduleStatus();
+  setInterval(renderScheduleStatus, 30000); // keep "Active until / Inactive until" correct as real time passes
+
   const LEVELS = ["off", "low", "medium", "high"]; // index 0-3
   const LEVEL_LABEL = { off: "Off", low: "Low", medium: "Medium", high: "High" };
 
