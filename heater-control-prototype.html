@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heater Control — Waitstaff Prototype</title>
+<style>
+  :root {
+    --purple: #A78BFA;
+    --orange: #F97316;
+    --led-on: #FFFFFF;
+    --led-off: #4C5568;
+    --dome: #2E384A;
+    --mid: #333F54;
+    --stroke1: #3B465E;
+    --card: #1C2333;
+    --page: #0C0F16;
+    --title: #F3F4F6;
+    --sub: #8B93A7;
+    --eyebrow: #A78BFA;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--title);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px 64px;
+  }
+  .head { text-align: center; margin-bottom: 24px; }
+  .head h1 { font-size: 19px; font-weight: 650; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .head p { font-size: 13px; color: var(--sub); margin: 0; }
+
+  .card {
+    background: var(--card);
+    border-radius: 28px;
+    padding: 26px 30px 34px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.45), 0 22px 54px rgba(0,0,0,0.42);
+    max-width: 560px; width: 100%;
+  }
+  .card .eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.11em; color: var(--eyebrow); text-transform: uppercase; }
+  .card .title { font-size: 22px; font-weight: 700; margin-top: 8px; letter-spacing: -0.015em; }
+  .card .desc { font-size: 13.5px; color: var(--sub); margin-top: 8px; line-height: 1.5; max-width: 340px; }
+
+  .controls { display: flex; justify-content: space-between; gap: 14px; margin-top: 30px; }
+  .control { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  .control .label { font-size: 11px; color: var(--sub); margin-top: 14px; font-weight: 500; }
+
+  svg { display: block; touch-action: manipulation; width: 100%; height: auto; }
+  .zone { cursor: pointer; outline: none; }
+  .zone:focus-visible .focusable { stroke: #6E8BFF; stroke-width: 2.5; }
+  .led { transition: fill 0.14s ease; }
+
+  .flash { fill: #FFFFFF; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash 0.4s ease-out; }
+  @keyframes flash { 0% { opacity: 0.10; } 100% { opacity: 0; } }
+
+  .legend { margin-top: 30px; display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--sub); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .swatch.ring { background: var(--led-off); }
+  .swatch.white { background: var(--led-on); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flash.go { animation: none; }
+    .led { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Patio heaters</h1>
+    <p>Tap a dome to set that spot · tap the middle to set both</p>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow">Concept 01</div>
+    <div class="title">Heater Control v7</div>
+    <div class="desc">Physical hardware-inspired UI with dual LED rows. Bright white dots indicate active levels.</div>
+    <div class="controls" id="controls"></div>
+  </div>
+
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--purple)"></i>Upper spot</span>
+    <span><i class="swatch" style="background:var(--orange)"></i>Lower spot</span>
+    <span><i class="swatch white"></i>Lit = heat level</span>
+    <span><i class="swatch ring"></i>Off</span>
+  </div>
+
+<script>
+(function () {
+  function nextDown(level) { return level === 0 ? 3 : level - 1; }
+
+  const controls = [
+    { id: "c1", label: "Seats 1–2" },
+    { id: "c2", label: "Seats 3–4" },
+    { id: "c3", label: "Seats 5–6" },
+  ];
+
+  const state = {
+    c1: { top: 3, bottom: 3 },
+    c2: { top: 3, bottom: 2 },
+    c3: { top: 1, bottom: 0 },
+  };
+
+  function buildSVG(sid) {
+    const W = 120, H = 292;
+    const cx = W / 2;
+    const bodyW = 88;
+    const bx = cx - bodyW / 2;
+    const rDome = bodyW / 2;
+
+    const topY = 8, topDomeH = 60, gap = 26;
+    const midY = topY + topDomeH + gap, midH = 88;
+    const botY = midY + midH + gap, botDomeH = 60, midR = 6;
+
+    // LED rows: 3 white leds, centered (no colored dot — Option 1)
+    const dotR = 6, dotGap = 26;
+    const groupW = dotGap * 2;
+    const gx0 = cx - groupW / 2;
+    const ledX = [gx0, gx0 + dotGap, gx0 + dotGap*2];
+
+    const topRowY = topY + topDomeH + gap/2;
+    const botRowY = midY + midH + gap/2;
+
+    // identity dots inside buttons (smaller)
+    const idR = 3.5;
+    const topIdY = topY + topDomeH * 0.60;
+    const botIdY = botY + botDomeH * 0.40;
+    // center button: dots STACKED VERTICALLY (purple top, orange bottom)
+    const midCx = cx;
+    const midCy = midY + midH/2;
+    const midDotGap = 9;
+
+    function topDomePath() {
+      return 'M ' + bx + ' ' + (topY + topDomeH) + ' L ' + bx + ' ' + (topY + rDome) +
+             ' A ' + rDome + ' ' + rDome + ' 0 0 1 ' + (bx + bodyW) + ' ' + (topY + rDome) +
+             ' L ' + (bx + bodyW) + ' ' + (topY + topDomeH) + ' Z';
+    }
+    function botDomePath() {
+      return 'M ' + bx + ' ' + botY + ' L ' + bx + ' ' + (botY + botDomeH - rDome) +
+             ' A ' + rDome + ' ' + rDome + ' 0 0 0 ' + (bx + bodyW) + ' ' + (botY + botDomeH - rDome) +
+             ' L ' + (bx + bodyW) + ' ' + botY + ' Z';
+    }
+    function ledRow(target, cy) {
+      let s = '';
+      for (let i = 0; i < 3; i++) {
+        s += '<circle class="led" data-target="' + target + '" data-led="' + (i+1) + '"' +
+             ' cx="' + ledX[i] + '" cy="' + cy + '" r="' + dotR + '" fill="var(--led-off)"/>';
+      }
+      return s;
+    }
+
+    return '' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="' + sid + ' heater control">' +
+      // TOP DOME
+      '<g class="zone" data-station="' + sid + '" data-target="top" tabindex="0" role="button" aria-label="Upper spot">' +
+        '<path class="focusable" d="' + topDomePath() + '" fill="var(--dome)" stroke="var(--stroke1)" stroke-width="1.25"/>' +
+        '<circle cx="' + cx + '" cy="' + topIdY + '" r="' + idR + '" fill="var(--purple)"/>' +
+        '<path class="flash" d="' + topDomePath() + '"/>' +
+      '</g>' +
+      // TOP LED ROW
+      '<g class="zone" data-station="' + sid + '" data-target="top" tabindex="0" role="button" aria-label="Upper spot level">' +
+        '<rect class="focusable" x="' + (ledX[0]-11) + '" y="' + (topRowY-11) + '" width="' + (groupW+22) + '" height="22" rx="11" fill="transparent"/>' +
+        ledRow("top", topRowY) +
+      '</g>' +
+      // MIDDLE (both) — dots stacked vertically
+      '<g class="zone" data-station="' + sid + '" data-target="both" tabindex="0" role="button" aria-label="Both spots">' +
+        '<rect class="focusable" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + midR + '" fill="var(--mid)" stroke="var(--stroke1)" stroke-width="1.25"/>' +
+        '<circle cx="' + midCx + '" cy="' + (midCy - midDotGap) + '" r="' + idR + '" fill="var(--purple)"/>' +
+        '<circle cx="' + midCx + '" cy="' + (midCy + midDotGap) + '" r="' + idR + '" fill="var(--orange)"/>' +
+        '<rect class="flash" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + midR + '"/>' +
+      '</g>' +
+      // BOTTOM LED ROW
+      '<g class="zone" data-station="' + sid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot level">' +
+        '<rect class="focusable" x="' + (ledX[0]-11) + '" y="' + (botRowY-11) + '" width="' + (groupW+22) + '" height="22" rx="11" fill="transparent"/>' +
+        ledRow("bottom", botRowY) +
+      '</g>' +
+      // BOTTOM DOME
+      '<g class="zone" data-station="' + sid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot">' +
+        '<path class="focusable" d="' + botDomePath() + '" fill="var(--dome)" stroke="var(--stroke1)" stroke-width="1.25"/>' +
+        '<circle cx="' + cx + '" cy="' + botIdY + '" r="' + idR + '" fill="var(--orange)"/>' +
+        '<path class="flash" d="' + botDomePath() + '"/>' +
+      '</g>' +
+    '</svg>';
+  }
+
+  function render(sid) {
+    const st = state[sid];
+    const root = document.getElementById(sid);
+    if (!root) return;
+    root.querySelectorAll(".led").forEach((d) => {
+      const target = d.getAttribute("data-target");
+      const n = parseInt(d.getAttribute("data-led"), 10);
+      d.setAttribute("fill", n <= st[target] ? "var(--led-on)" : "var(--led-off)");
+    });
+  }
+  function flash(sid, target) {
+    document.getElementById(sid).querySelectorAll('.zone').forEach((z) => {
+      if (z.getAttribute('data-target') !== target) return;
+      const f = z.querySelector('.flash'); if (!f) return;
+      f.classList.remove('go'); void f.getBoundingClientRect(); f.classList.add('go');
+    });
+  }
+  function tap(sid, target) {
+    const st = state[sid];
+    if (target === "top") st.top = nextDown(st.top);
+    else if (target === "bottom") st.bottom = nextDown(st.bottom);
+    else {
+      if (st.top !== st.bottom) { const lo = Math.min(st.top, st.bottom); st.top = lo; st.bottom = lo; }
+      else { const nx = nextDown(st.top); st.top = nx; st.bottom = nx; }
+    }
+    flash(sid, target); render(sid);
+  }
+
+  const wrap = document.getElementById("controls");
+  controls.forEach((c) => {
+    const col = document.createElement("div");
+    col.className = "control";
+    col.innerHTML = '<div id="' + c.id + '">' + buildSVG(c.id) + '</div>' +
+                    '<div class="label">' + c.label + '</div>';
+    wrap.appendChild(col);
+  });
+
+  document.addEventListener("click", (e) => {
+    const z = e.target.closest(".zone"); if (!z) return;
+    tap(z.getAttribute("data-station"), z.getAttribute("data-target"));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const z = e.target.closest(".zone"); if (!z) return;
+    e.preventDefault();
+    tap(z.getAttribute("data-station"), z.getAttribute("data-target"));
+  });
+
+  controls.forEach((c) => render(c.id));
+})();
+</script>
+</body>
+</html>
