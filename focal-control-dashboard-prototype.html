@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Focal Control Dashboard — Waitstaff Prototype</title>
+<style>
+  :root {
+    --purple: #A78BFA;
+    --orange: #F97316;
+    --led-on: #FFFFFF;
+    --led-off: #4C5568;
+    --dome: #262E40;
+    --mid: #262E40;
+    --stroke1: #47546B;
+    --card: #111420;
+    --card-border: #334155;
+    --page: #0A0D14;
+    --panel: #0E1117;
+    --title: #F3F4F6;
+    --sub: #8B93A7;
+    --accent: #10B981;
+    --danger: #F87171;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--title);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+  }
+  .mono { font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; }
+
+  .page { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+  /* Header */
+  .header { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .header-top { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; position: relative; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; position: absolute; left: 0; }
+  .logo svg { width: 22px; height: 22px; }
+  .restaurant-name { font-weight: 800; font-size: 20px; }
+  .status-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .schedule-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--card-border); border-radius: 12px;
+    padding: 12px 14px; cursor: default;
+    box-shadow: 0 6px 8px rgba(0,0,0,0.4);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .schedule-btn:hover { border-color: #4d5a73; background: #131722; }
+  .schedule-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+  .schedule-btn .text { font-size: 14px; color: #E5E7EB; }
+  .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.75; transition: opacity 0.15s ease; }
+  .schedule-btn:hover .pencil { opacity: 1; }
+  .system-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #E5E7EB; }
+  .system-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  /* Section shells */
+  .section-label {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #E5E7EB; margin-bottom: 12px;
+  }
+
+  /* Quick controls */
+  .quick-controls .buttons-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .zone-select-card {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #212638; border: 1.5px solid #4d546b; border-radius: 12px;
+    padding: 12px 18px; height: 56px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    cursor: pointer; font: inherit; color: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+  }
+  .zone-select-card:hover { border-color: #6b7591; background: #262c42; }
+  .zone-select-card:active { transform: scale(0.98); }
+  .zone-select-card .led-mini { display: flex; gap: 6px; }
+  .zone-select-card .led-mini i { width: 8px; height: 8px; border-radius: 50%; background: var(--led-off); }
+  .zone-select-card .led-mini i:last-child { background: var(--led-on); }
+  .zone-select-card .label { font-size: 15px; font-weight: 600; color: #E5E7EB; white-space: nowrap; }
+
+  /* Map */
+  .map-canvas {
+    background: var(--panel); border: 1px solid #262e40; border-radius: 12px;
+    padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .street-bar {
+    width: 100%; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
+    height: 44px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: #E5E7EB;
+  }
+  .map-zones { display: flex; gap: 12px; width: 100%; }
+  .map-zone-card {
+    flex: 1; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
+    height: 100px; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff; cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+  }
+  .map-zone-card:hover { border-color: var(--purple); background: #171c2c; }
+  .map-zone-card:active { transform: scale(0.985); }
+  .map-zone-card:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  .map-entrance {
+    background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
+    padding: 14px; font-size: 14px; font-weight: 700; color: #fff;
+  }
+
+  /* Zone sections */
+  .zone-section {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 16px;
+    padding: 24px; scroll-margin-top: 24px;
+  }
+  .zone-section-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+  }
+  .zone-title { font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 14px; text-transform: uppercase; color: #E5E7EB; }
+  .set-all-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #212638; border: 1.5px solid #4d546b; border-radius: 12px;
+    padding: 12px 18px; height: 48px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    cursor: pointer; font: inherit; color: #fff; font-weight: 700; font-size: 14px;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
+  }
+  .set-all-btn:hover { border-color: #6b7591; background: #262c42; }
+  .set-all-btn:active { transform: scale(0.98); }
+  .set-all-btn .led-mini { display: flex; gap: 6px; }
+  .set-all-btn .led-mini i { width: 8px; height: 8px; border-radius: 50%; background: var(--led-off); }
+  .set-all-btn .led-mini i:last-child { background: var(--led-on); }
+
+  .heaters-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .rail-card {
+    background: #0e1119; border: 1px solid #262e40; border-radius: 14px; padding: 16px;
+    display: flex; gap: 12px;
+  }
+
+  .heater { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100px; }
+  .heater.offline .pill-widget { opacity: 0.55; }
+  .heater.offline svg .zone { cursor: not-allowed; pointer-events: none; }
+  .offline-badge {
+    display: none; align-items: center; gap: 4px; font-size: 10px; color: var(--sub);
+    margin-top: -4px;
+  }
+  .heater.offline .offline-badge { display: inline-flex; }
+
+  svg.pill-svg { display: block; touch-action: manipulation; width: 76px; height: auto; }
+  .zone { cursor: pointer; outline: none; }
+  .zone:focus-visible .focusable { stroke: #6E8BFF; stroke-width: 2.5; }
+  .led { transition: fill 0.14s ease; }
+  .flash { fill: #FFFFFF; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash 0.4s ease-out; }
+  @keyframes flash { 0% { opacity: 0.14; } 100% { opacity: 0; } }
+
+  .overflow-btn {
+    background: #1f2433; border: 1px solid #40475c; border-radius: 8px; padding: 8px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .overflow-btn:hover { border-color: #6b7591; background: #262c3e; }
+  .overflow-btn svg { width: 16px; height: 12px; }
+  .overflow-btn svg rect { fill: #99A6B8; }
+
+  /* Footer legend */
+  .legend { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--sub); padding-top: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .swatch.ring { background: var(--led-off); }
+  .swatch.white { background: var(--led-on); }
+
+  /* Modal (quick-set + overflow) */
+  .modal-scrim {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 50;
+    padding: 20px;
+  }
+  .modal-scrim.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    background: #141720; border: 1px solid #242936; border-radius: 20px;
+    padding: 24px; width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: 20px;
+    transform: translateY(12px); transition: transform 0.15s ease;
+  }
+  .modal-scrim.open .sheet { transform: translateY(0); }
+
+  .sheet-header { display: flex; align-items: flex-end; justify-content: space-between; }
+  .sheet-header .title { font-size: 22px; font-weight: 700; color: #fff; }
+  .sheet-header .subtitle { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8C92AC; margin-top: 4px; }
+  .sheet-header .cmd { font-size: 10px; color: #4E5366; }
+
+  .options-stack { display: flex; flex-direction: column; gap: 10px; }
+  .option-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #1c1f2b; border: 1px solid #2d3244; border-radius: 12px;
+    padding: 16px; cursor: pointer; font: inherit; color: inherit; text-align: left;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .option-row:hover { border-color: #4d5a73; background: #21253300; background: #232838; }
+  .option-row .led-group { display: flex; gap: 5px; }
+  .option-row .led-group i { width: 8px; height: 8px; border-radius: 50%; background: #2d3244; }
+  .option-row .led-group i.on { background: #fff; }
+  .option-row .label { font-size: 15px; font-weight: 500; color: #8C92AC; display: flex; align-items: center; gap: 8px; }
+  .option-row.active { border-color: #fff; }
+  .option-row.active .label { color: #fff; font-weight: 700; }
+  .option-row.active .label::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+
+  .cancel-btn {
+    background: none; border: none; color: #8C92AC; font-size: 15px; font-weight: 600;
+    text-transform: uppercase; text-align: center; padding: 12px; cursor: pointer; font-family: inherit;
+  }
+  .cancel-btn:hover { color: #fff; }
+
+  /* Overflow action menu */
+  .overflow-sheet .actions { display: flex; flex-direction: column; gap: 4px; }
+  .overflow-sheet .serial-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 4px; border-bottom: 1px solid #242936; margin-bottom: 8px;
+    font-size: 13px; color: #8C92AC;
+  }
+  .action-row {
+    display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-radius: 10px;
+    cursor: pointer; font-size: 14px; color: #E5E7EB; background: none; border: none; font-family: inherit; text-align: left;
+  }
+  .action-row:hover { background: #1c1f2b; }
+  .action-row.danger { color: var(--danger); }
+  .action-row svg { width: 16px; height: 16px; flex: none; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1c1f2b; border: 1px solid #2d3244; border-radius: 10px; padding: 12px 18px;
+    font-size: 13px; color: #E5E7EB; opacity: 0; pointer-events: none; transition: all 0.2s ease;
+    z-index: 60;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flash.go { animation: none; }
+    .led, .schedule-btn, .zone-select-card, .set-all-btn, .map-zone-card { transition: none; }
+  }
+
+  @media (max-width: 720px) {
+    .header-top { flex-direction: column; }
+    .logo { position: static; }
+    .map-zones { flex-direction: column; }
+    .zone-section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#fff"/></svg>
+          FOCAL
+        </div>
+        <div class="restaurant-name">Little Shucker</div>
+      </div>
+      <div class="status-row">
+        <button class="schedule-btn" id="scheduleBtn" type="button" aria-label="Edit schedule (not available in this prototype)">
+          <span class="dot"></span>
+          <span class="text mono">Schedule: Active until 10:30 PM</span>
+          <svg class="pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#E5E7EB">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+        </button>
+        <div class="system-status">
+          <span class="dot"></span>
+          <span class="mono">All Heaters Online</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Controls -->
+    <div class="quick-controls">
+      <div class="section-label mono">Quick Controls</div>
+      <div class="buttons-row">
+        <button class="zone-select-card" data-scope="all" type="button">
+          <span class="led-mini"><i></i><i></i><i></i></span>
+          <span class="label">Set All Heaters</span>
+        </button>
+        <button class="zone-select-card" data-scope="1" type="button">
+          <span class="led-mini"><i></i><i></i><i></i></span>
+          <span class="label">Set Zone 1</span>
+        </button>
+        <button class="zone-select-card" data-scope="2" type="button">
+          <span class="led-mini"><i></i><i></i><i></i></span>
+          <span class="label">Set Zone 2</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Restaurant Map -->
+    <div>
+      <div class="section-label mono">Restaurant Map</div>
+      <div class="map-canvas">
+        <div class="street-bar">Clement St</div>
+        <div class="map-zones">
+          <div class="map-zone-card" data-jump="1" role="button" tabindex="0">Zone 1</div>
+          <div class="map-zone-card" data-jump="2" role="button" tabindex="0">Zone 2</div>
+        </div>
+        <div class="map-entrance">Restaurant Entrance</div>
+      </div>
+    </div>
+
+    <!-- Zone 1 -->
+    <div class="zone-section" id="zone-1">
+      <div class="zone-section-header">
+        <div class="zone-title mono">Zone 1</div>
+        <button class="set-all-btn" data-scope="1" type="button">
+          <span class="led-mini"><i></i><i></i><i></i></span>
+          <span>Set Zone 1</span>
+        </button>
+      </div>
+      <div class="heaters-row">
+        <div class="rail-card" data-rail></div>
+        <div class="rail-card" data-rail></div>
+        <div class="rail-card" data-rail></div>
+      </div>
+    </div>
+
+    <!-- Zone 2 -->
+    <div class="zone-section" id="zone-2">
+      <div class="zone-section-header">
+        <div class="zone-title mono">Zone 2</div>
+        <button class="set-all-btn" data-scope="2" type="button">
+          <span class="led-mini"><i></i><i></i><i></i></span>
+          <span>Set Zone 2</span>
+        </button>
+      </div>
+      <div class="heaters-row">
+        <div class="rail-card" data-rail></div>
+        <div class="rail-card" data-rail></div>
+      </div>
+    </div>
+
+    <!-- Footer legend -->
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--purple)"></i>Upper spot</span>
+      <span><i class="swatch" style="background:var(--orange)"></i>Lower spot</span>
+      <span><i class="swatch white"></i>Lit = heat level</span>
+      <span><i class="swatch ring"></i>Off</span>
+    </div>
+  </div>
+
+  <!-- Quick-set modal -->
+  <div class="modal-scrim" id="levelModalScrim">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="levelModalTitle">
+      <div class="sheet-header">
+        <div>
+          <div class="title" id="levelModalTitle">Zone 1</div>
+          <div class="subtitle mono">Set Heat Level</div>
+        </div>
+        <div class="cmd mono">SYS_CMD::0x09</div>
+      </div>
+      <div class="options-stack" id="levelOptions">
+        <!-- options injected -->
+      </div>
+      <button class="cancel-btn" id="levelCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Overflow (heater actions) modal -->
+  <div class="modal-scrim" id="overflowModalScrim">
+    <div class="sheet overflow-sheet" role="dialog" aria-modal="true" aria-labelledby="overflowModalTitle">
+      <div class="sheet-header">
+        <div class="title" id="overflowModalTitle" style="font-size:16px;">Heater Actions</div>
+      </div>
+      <div class="serial-row">
+        <span class="mono" id="overflowSerial">DUO02-2603-SF1-00084</span>
+        <span>📋</span>
+      </div>
+      <div class="actions">
+        <button class="action-row" data-action="identify" type="button">🔍 Identify heater</button>
+        <button class="action-row" data-action="swap" type="button">🔄 Swap heater</button>
+        <button class="action-row danger" data-action="remove" type="button">🗑 Remove heater</button>
+      </div>
+      <button class="cancel-btn" id="overflowCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const LEVELS = ["off", "low", "medium", "high"]; // index 0-3
+  const LEVEL_LABEL = { off: "Off", low: "Low", medium: "Medium", high: "High" };
+
+  function nextDown(level) { return level === 0 ? 3 : level - 1; }
+
+  const HEATERS = [
+    { id: "HT-01", zone: 1, rail: 0, label: "HT-01" },
+    { id: "HT-02", zone: 1, rail: 0, label: "HT-02" },
+    { id: "HT-03", zone: 1, rail: 1, label: "HT-03" },
+    { id: "HT-04", zone: 1, rail: 1, label: "HT-04" },
+    { id: "HT-05", zone: 1, rail: 2, label: "HT-05" },
+    { id: "HT-06", zone: 1, rail: 2, label: "HT-06", offline: true },
+    { id: "HT-07", zone: 2, rail: 0, label: "HT-07" },
+    { id: "HT-08", zone: 2, rail: 0, label: "HT-08" },
+    { id: "HT-09", zone: 2, rail: 1, label: "HT-09" },
+    { id: "HT-10", zone: 2, rail: 1, label: "HT-10" },
+  ];
+
+  const state = {};
+  HEATERS.forEach((h, i) => {
+    state[h.id] = { top: (i * 2) % 4, bottom: (i * 3 + 1) % 4 };
+  });
+
+  function buildSVG(hid) {
+    const W = 76, H = 196;
+    const cx = W / 2;
+    const bodyW = 68;
+    const bx = (W - bodyW) / 2;
+
+    const topY = 4, topH = 48, gap = 8;
+    const midY = topY + topH + gap, midH = 54;
+    const botY = midY + midH + gap, botH = 48;
+    const rOuter = 34, rInner = 8;
+
+    const dotR = 3.5, dotGap = 15;
+    const groupW = dotGap * 2;
+    const gx0 = cx - groupW / 2;
+    const ledX = [gx0, gx0 + dotGap, gx0 + dotGap * 2];
+    const topRowY = topY + topH + gap / 2;
+    const botRowY = midY + midH + gap / 2;
+
+    const idR = 2;
+    const topIdY = topY + topH * 0.46;
+    const botIdY = botY + botH * 0.46;
+    const midCx = cx, midCy = midY + midH / 2, midDotGap = 6;
+
+    function topPath() {
+      return 'M ' + bx + ' ' + (topY + topH) + ' L ' + bx + ' ' + (topY + rOuter) +
+             ' A ' + rOuter + ' ' + rOuter + ' 0 0 1 ' + (bx + bodyW) + ' ' + (topY + rOuter) +
+             ' L ' + (bx + bodyW) + ' ' + (topY + topH) + ' Z';
+    }
+    function botPath() {
+      return 'M ' + bx + ' ' + botY + ' L ' + bx + ' ' + (botY + botH - rOuter) +
+             ' A ' + rOuter + ' ' + rOuter + ' 0 0 0 ' + (bx + bodyW) + ' ' + (botY + botH - rOuter) +
+             ' L ' + (bx + bodyW) + ' ' + botY + ' Z';
+    }
+    function ledRow(target, cy) {
+      let s = '';
+      for (let i = 0; i < 3; i++) {
+        s += '<circle class="led" data-target="' + target + '" data-led="' + (i + 1) + '"' +
+             ' cx="' + ledX[i] + '" cy="' + cy + '" r="' + dotR + '" fill="var(--led-off)"/>';
+      }
+      return s;
+    }
+
+    return '' +
+    '<svg class="pill-svg" viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="' + hid + ' heater control">' +
+      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Upper spot">' +
+        '<path class="focusable" d="' + topPath() + '" fill="var(--dome)" stroke="var(--stroke1)" stroke-width="1.5"/>' +
+        '<circle cx="' + cx + '" cy="' + topIdY + '" r="' + idR + '" fill="var(--purple)"/>' +
+        '<path class="flash" d="' + topPath() + '"/>' +
+      '</g>' +
+      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Upper spot level">' +
+        '<rect class="focusable" x="' + (ledX[0] - 8) + '" y="' + (topRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
+        ledRow("top", topRowY) +
+      '</g>' +
+      '<g class="zone" data-heater="' + hid + '" data-target="both" tabindex="0" role="button" aria-label="Both spots">' +
+        '<rect class="focusable" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '" fill="var(--mid)" stroke="var(--stroke1)" stroke-width="1.5"/>' +
+        '<circle cx="' + midCx + '" cy="' + (midCy - midDotGap) + '" r="' + idR + '" fill="var(--purple)"/>' +
+        '<circle cx="' + midCx + '" cy="' + (midCy + midDotGap) + '" r="' + idR + '" fill="var(--orange)"/>' +
+        '<rect class="flash" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '"/>' +
+      '</g>' +
+      '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot level">' +
+        '<rect class="focusable" x="' + (ledX[0] - 8) + '" y="' + (botRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
+        ledRow("bottom", botRowY) +
+      '</g>' +
+      '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot">' +
+        '<path class="focusable" d="' + botPath() + '" fill="var(--dome)" stroke="var(--stroke1)" stroke-width="1.5"/>' +
+        '<circle cx="' + cx + '" cy="' + botIdY + '" r="' + idR + '" fill="var(--orange)"/>' +
+        '<path class="flash" d="' + botPath() + '"/>' +
+      '</g>' +
+    '</svg>';
+  }
+
+  function render(hid) {
+    const st = state[hid];
+    const root = document.getElementById('heater-' + hid);
+    if (!root) return;
+    root.querySelectorAll(".led").forEach((d) => {
+      const target = d.getAttribute("data-target");
+      const n = parseInt(d.getAttribute("data-led"), 10);
+      d.setAttribute("fill", n <= st[target] ? "var(--led-on)" : "var(--led-off)");
+    });
+  }
+
+  function flash(hid, target) {
+    const root = document.getElementById('heater-' + hid);
+    if (!root) return;
+    root.querySelectorAll('.zone').forEach((z) => {
+      if (z.getAttribute('data-target') !== target) return;
+      const f = z.querySelector('.flash'); if (!f) return;
+      f.classList.remove('go'); void f.getBoundingClientRect(); f.classList.add('go');
+    });
+  }
+
+  function tap(hid, target) {
+    const meta = HEATERS.find((h) => h.id === hid);
+    if (meta && meta.offline) return;
+    const st = state[hid];
+    if (target === "top") st.top = nextDown(st.top);
+    else if (target === "bottom") st.bottom = nextDown(st.bottom);
+    else {
+      if (st.top !== st.bottom) { const lo = Math.min(st.top, st.bottom); st.top = lo; st.bottom = lo; }
+      else { const nx = nextDown(st.top); st.top = nx; st.bottom = nx; }
+    }
+    flash(hid, target); render(hid);
+  }
+
+  function setHeaterLevel(hid, levelIndex) {
+    state[hid] = { top: levelIndex, bottom: levelIndex };
+    render(hid);
+    flash(hid, "top"); flash(hid, "bottom"); flash(hid, "both");
+  }
+
+  // ---- Build heater rails ----
+  const rails = { 1: [], 2: [] };
+  HEATERS.forEach((h) => {
+    if (!rails[h.zone][h.rail]) rails[h.zone][h.rail] = [];
+    rails[h.zone][h.rail].push(h);
+  });
+
+  [1, 2].forEach((zoneNum) => {
+    const railCards = document.querySelectorAll('#zone-' + zoneNum + ' [data-rail]');
+    rails[zoneNum].forEach((heatersInRail, railIdx) => {
+      const card = railCards[railIdx];
+      if (!card || !heatersInRail) return;
+      heatersInRail.forEach((h) => {
+        const col = document.createElement('div');
+        col.className = 'heater' + (h.offline ? ' offline' : '');
+        col.innerHTML =
+          '<div class="pill-widget" id="heater-' + h.id + '">' + buildSVG(h.id) + '</div>' +
+          '<div class="offline-badge">⛔︎ Offline</div>' +
+          '<button class="overflow-btn" data-overflow="' + h.id + '" type="button" aria-label="' + h.id + ' actions">' +
+            '<svg viewBox="0 0 16 12"><rect x="1" y="0" width="14" height="1.5" rx="0.75"/><rect x="1" y="5.25" width="14" height="1.5" rx="0.75"/><rect x="1" y="10.5" width="14" height="1.5" rx="0.75"/></svg>' +
+          '</button>';
+        card.appendChild(col);
+      });
+    });
+  });
+
+  HEATERS.forEach((h) => render(h.id));
+
+  // ---- Individual heater tap handling ----
+  document.addEventListener('click', (e) => {
+    const z = e.target.closest('.zone');
+    if (z) { tap(z.getAttribute('data-heater'), z.getAttribute('data-target')); return; }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const z = e.target.closest('.zone');
+    if (z) { e.preventDefault(); tap(z.getAttribute('data-heater'), z.getAttribute('data-target')); }
+  });
+
+  // ---- Map zone cards: hover + scroll ----
+  document.querySelectorAll('.map-zone-card').forEach((card) => {
+    const go = () => {
+      const target = document.getElementById('zone-' + card.getAttribute('data-jump'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    card.addEventListener('click', go);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+    });
+  });
+
+  // ---- Quick-set / Set Zone N modal ----
+  const levelScrim = document.getElementById('levelModalScrim');
+  const levelTitle = document.getElementById('levelModalTitle');
+  const levelOptions = document.getElementById('levelOptions');
+  let activeScope = null; // "all" | "1" | "2"
+
+  function scopeLabel(scope) {
+    if (scope === 'all') return 'All Heaters';
+    return 'Zone ' + scope;
+  }
+
+  function heatersInScope(scope) {
+    if (scope === 'all') return HEATERS.filter((h) => !h.offline);
+    return HEATERS.filter((h) => String(h.zone) === String(scope) && !h.offline);
+  }
+
+  function openLevelModal(scope) {
+    activeScope = scope;
+    levelTitle.textContent = scopeLabel(scope);
+    levelOptions.innerHTML = LEVELS.slice().reverse().map((lvl) => {
+      const idx = LEVELS.indexOf(lvl);
+      return (
+        '<button class="option-row" data-level="' + idx + '" type="button">' +
+          '<span class="led-group">' + dotsForLevel(idx) + '</span>' +
+          '<span class="label">' + LEVEL_LABEL[lvl] + '</span>' +
+        '</button>'
+      );
+    }).join('');
+    levelScrim.classList.add('open');
+  }
+
+  function dotsForLevel(idx) {
+    // idx: 0=off,1=low,2=medium,3=high -> light up idx dots out of 3
+    let s = '';
+    for (let i = 1; i <= 3; i++) {
+      s += '<i' + (i <= idx ? ' class="on"' : '') + '></i>';
+    }
+    return s;
+  }
+
+  function closeLevelModal() {
+    levelScrim.classList.remove('open');
+    activeScope = null;
+  }
+
+  document.querySelectorAll('[data-scope]').forEach((btn) => {
+    btn.addEventListener('click', () => openLevelModal(btn.getAttribute('data-scope')));
+  });
+
+  levelOptions.addEventListener('click', (e) => {
+    const row = e.target.closest('.option-row');
+    if (!row || !activeScope) return;
+    const levelIdx = parseInt(row.getAttribute('data-level'), 10);
+    const targets = heatersInScope(activeScope);
+    targets.forEach((h) => setHeaterLevel(h.id, levelIdx));
+    showToast('Set ' + scopeLabel(activeScope) + ' to ' + LEVEL_LABEL[LEVELS[levelIdx]] + ' (' + targets.length + ' heater' + (targets.length === 1 ? '' : 's') + ')');
+    closeLevelModal();
+  });
+
+  document.getElementById('levelCancelBtn').addEventListener('click', closeLevelModal);
+  levelScrim.addEventListener('click', (e) => { if (e.target === levelScrim) closeLevelModal(); });
+
+  // ---- Overflow (heater actions) modal ----
+  const overflowScrim = document.getElementById('overflowModalScrim');
+  let overflowHeaterId = null;
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-overflow]');
+    if (!btn) return;
+    overflowHeaterId = btn.getAttribute('data-overflow');
+    document.getElementById('overflowModalTitle').textContent = overflowHeaterId + ' — Heater Actions';
+    overflowScrim.classList.add('open');
+  });
+
+  function closeOverflowModal() { overflowScrim.classList.remove('open'); overflowHeaterId = null; }
+  document.getElementById('overflowCancelBtn').addEventListener('click', closeOverflowModal);
+  overflowScrim.addEventListener('click', (e) => { if (e.target === overflowScrim) closeOverflowModal(); });
+
+  document.querySelectorAll('.action-row').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      showToast((overflowHeaterId || '') + ': ' + btn.textContent.trim());
+      closeOverflowModal();
+    });
+  });
+
+  // ---- Toast ----
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // Escape closes any open modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (levelScrim.classList.contains('open')) closeLevelModal();
+    if (overflowScrim.classList.contains('open')) closeOverflowModal();
+  });
+})();
+</script>
+</body>
+</html>
