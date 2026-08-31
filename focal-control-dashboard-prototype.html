@@ -187,6 +187,10 @@
     width: 20px; height: 20px; color: var(--danger); pointer-events: none;
   }
   .heater.offline .offline-icon { display: block; }
+  /* Color indicators (spot dots + LED rows) would visually clash with the offline icon overlay — hide them
+     while offline, since there's nothing meaningful to indicate when the heater isn't reachable anyway. */
+  .heater.offline svg circle:not(.led),
+  .heater.offline svg .led { display: none; }
 
   /* No outer pill/oval wrapper: the matching-width buttons + LED bar read as one unit on their own.
      This is a plain positioning anchor for the offline-icon overlay. */
@@ -634,12 +638,12 @@
     const topH = 48, ledH = 14, midH = 54, botH = 48;
     const rOuter = 34, rInner = 8;
 
-    const topY = 0;
+    const topY = STROKE_PAD;
     const topRowY = topY + topH + GAP + ledH / 2;
     const midY = topY + topH + GAP + ledH + GAP;
     const botRowY = midY + midH + GAP + ledH / 2;
     const botY = midY + midH + GAP + ledH + GAP;
-    const H = botY + botH;
+    const H = botY + botH + STROKE_PAD;
 
     // LED bar now spans the full button width, matching the top/center/bottom buttons.
     const dotR = 5;
