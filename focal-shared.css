@@ -1,0 +1,130 @@
+/* Shared visual language for the Focal Control prototypes (dashboard + scheduling).
+   Keep tokens and primitives here so the pages can't drift out of sync with each other. */
+
+:root {
+  --purple: #A78BFA;
+  --orange: #F97316;
+  --led-on: #FFFFFF;
+  --led-off: #4C5568;
+  --page: #0A0D14;
+  --panel: #0E1117;
+  --card: #111420;
+  --card-border: #334155;
+  --title: #F3F4F6;
+  --sub: #8B93A7;
+  --accent: #10B981;
+  --danger: #F87171;
+
+  /* Unified button system: every tappable target shares this fill/stroke/hover language.
+     Flat fill (not a visible top-to-bottom gradient — that reads as dated skeuomorphism)
+     with a hint of blue. Depth comes from the border + shadow + a 1px inner top highlight,
+     not from shading the whole surface. */
+  --btn-fill: #1D222E;
+  --btn-stroke: #616B80;
+  --btn-stroke-hover: #E8EBF1;
+  --btn-fill-hover: #272E3D;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--page);
+  color: var(--title);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  padding: 32px 20px 80px;
+}
+.mono { font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; }
+
+/* ---- Shared button system: every tappable target uses this exact fill/stroke/hover ---- */
+.btn {
+  background: var(--btn-fill);
+  border: 1.5px solid var(--btn-stroke); border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; color: #fff;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+}
+.btn:active { transform: scale(0.98); box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); }
+.btn:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Hover states are gated to devices with real hover capability (mouse/trackpad) — on touchscreens
+   there's no "unhover" event, so :hover would otherwise stay stuck lit after every tap. Border
+   stays 1.5px at every state — only the color changes — same as the heater controls' hover/focus
+   stroke, so nothing shifts on hover. */
+@media (hover: hover) {
+  .btn:hover {
+    border-color: var(--btn-stroke-hover);
+    background: var(--btn-fill-hover);
+  }
+  .btn:disabled:hover { border-color: var(--btn-stroke); background: var(--btn-fill); }
+}
+
+/* Text-link button: a second, lighter-weight tappable style for actions that live away from dense
+   button grids/cards (page-level nav, per-row "Turn off"/"Set hours" actions, footnote links) — clear
+   as a link from its underline rather than needing the full pill/border/shadow .btn treatment. */
+.text-btn {
+  background: none; border: none; padding: 0; margin: 0;
+  font: inherit; font-size: 12px; font-weight: 700; color: var(--title);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--sub);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.text-btn:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 3px; border-radius: 2px; }
+@media (hover: hover) {
+  .text-btn:hover { color: #fff; text-decoration-color: #fff; }
+}
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1c1f2b; border: 1px solid #2d3244; border-radius: 10px; padding: 12px 18px;
+  font-size: 13px; color: #E5E7EB; opacity: 0; pointer-events: none; transition: all 0.2s ease;
+  z-index: 60;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---- Page shell + header, shared across every prototype page ---- */
+.page { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.header { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.restaurant-name { font-weight: 800; font-size: 20px; white-space: nowrap; }
+
+/* Section label: a plain uppercase heading for a page section with no associated action
+   ("System Status", "Set Heat Quickly", "Restaurant Map", "Schedule"). */
+.section-label {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #E5E7EB; margin-bottom: 12px;
+}
+
+/* Section header: a row pairing an uppercase mono label with one right-aligned action button
+   (Zone 1 + "Set Zone 1 Heat", Weekly Hours + "Save Hours") — the button is the one real action
+   tied to that section, so it stays visually anchored to the label it belongs to. No divider line:
+   the section's content sits in its own shelf-card/background right below, which already reads as
+   a distinct block, so a bigger label + a slightly shorter button carry the separation instead. */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 16px;
+}
+.section-header .title {
+  flex: none;
+  font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 15px;
+  text-transform: uppercase; color: #E5E7EB;
+}
+
+/* Status item: a status dot + label, used wherever a plain (non-button) status is shown inline
+   (dashboard System Status row, Scheduling page's toggle row) — never styled as a button itself. */
+.status-pair { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.status-item { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; }
+.status-item .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+/* White when active/lit, dim when not — a mode indicator, not a health/success color. */
+.status-item .dot { background: var(--led-on); box-shadow: 0 0 4px rgba(255,255,255,0.7); }
+.status-item .dot.inactive { background: var(--led-off); box-shadow: none; }
+.status-item .dot.offline { background: var(--danger); box-shadow: 0 0 4px rgba(248,113,113,0.7); }
+.status-item .text { color: var(--sub); }
+
+/* Shelf card: the borderless, near-black "shelf" background used for the dashboard's heater-rail
+   groups and map landmarks — reused wherever non-interactive content needs a subtle background
+   grouping without looking like a bordered, clickable card. */
+.shelf-card {
+  background: rgba(255,255,255,0.025); border-radius: 16px;
+  padding: 20px;
+}
