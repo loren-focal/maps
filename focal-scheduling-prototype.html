@@ -44,6 +44,13 @@
   .switch.on .knob { left: 21.5px; background: var(--page); }
   .switch:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
 
+  /* Compact per-day switch — same on/off language as the Schedule-level switch, sized down to fit
+     the day row and free up horizontal space that the "Turn off"/"Set hours" text buttons used to
+     take, which is what was forcing narrow viewports to wrap. */
+  .switch.small { width: 36px; height: 21px; flex: none; }
+  .switch.small .knob { width: 15px; height: 15px; top: 2px; left: 2px; }
+  .switch.small.on .knob { left: 17px; }
+
   /* Recommend-enabling callout, shown only when schedule is Off */
   .callout {
     display: flex; gap: 10px; align-items: flex-start;
@@ -356,11 +363,16 @@
     state.forEach((d, i) => {
       const row = document.createElement("div");
       row.className = "day" + (d.closed ? " closed" : "");
+      const switchHtml =
+        '<div class="switch small day-action' + (d.closed ? '' : ' on') + '" data-day="' + i + '" ' +
+          'role="switch" aria-checked="' + (!d.closed) + '" tabindex="0" aria-label="Toggle ' + d.name + ' hours">' +
+          '<div class="knob"></div>' +
+        '</div>';
       if (d.closed) {
         row.innerHTML =
           '<span class="day-name">' + d.name.slice(0, 3) + '</span>' +
           '<span class="closed-tag">Off</span>' +
-          '<button class="text-btn link-btn day-action" data-open="' + i + '" type="button">Set hours</button>';
+          switchHtml;
       } else {
         row.innerHTML =
           '<span class="day-name">' + d.name.slice(0, 3) + '</span>' +
@@ -369,7 +381,7 @@
             '<span class="dash">&ndash;</span>' +
             '<input type="time" class="t-end" data-i="' + i + '" value="' + d.end + '">' +
           '</div>' +
-          '<button class="text-btn link-btn day-action" data-close="' + i + '" type="button">Turn off</button>' +
+          switchHtml +
           '<div class="warn" style="display:none;">End time must be after start time.</div>';
       }
       daysEl.appendChild(row);
@@ -377,11 +389,20 @@
     updateSaveButtonState();
   }
 
+  function toggleDay(i) {
+    state[i].closed = !state[i].closed;
+    renderDays();
+    renderStatus();
+  }
+
   daysEl.addEventListener("click", (e) => {
-    const openI = e.target.getAttribute("data-open");
-    const closeI = e.target.getAttribute("data-close");
-    if (openI !== null) { state[openI].closed = false; renderDays(); renderStatus(); }
-    if (closeI !== null) { state[closeI].closed = true; renderDays(); renderStatus(); }
+    const sw = e.target.closest("[data-day]");
+    if (sw) toggleDay(sw.getAttribute("data-day"));
+  });
+  daysEl.addEventListener("keydown", (e) => {
+    if (e.key !== " " && e.key !== "Enter") return;
+    const sw = e.target.closest("[data-day]");
+    if (sw) { e.preventDefault(); toggleDay(sw.getAttribute("data-day")); }
   });
 
   daysEl.addEventListener("change", (e) => {
