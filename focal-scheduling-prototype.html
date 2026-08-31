@@ -70,14 +70,15 @@
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
   .day:last-child { border-bottom: none; }
-  .day-name { width: 44px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
-  .times { display: flex; align-items: center; gap: 8px; }
-  .dash { color: var(--sub); }
+  .day-name { width: 34px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .times { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+  .dash { color: var(--sub); flex: none; }
   input[type="time"] {
-    font-family: inherit; font-size: 13px; padding: 7px 6px 7px 10px;
+    font-family: inherit; font-size: 13px; padding: 7px 4px 7px 8px;
     border: 1.5px solid var(--btn-stroke); border-radius: 8px;
     background: var(--btn-fill); color: var(--title);
     color-scheme: dark;
+    width: 0; flex: 1 1 0; min-width: 84px;
   }
   input[type="time"]:focus { outline: none; border-color: var(--btn-stroke-hover); }
   input[type="time"].error { border-color: var(--danger); }
@@ -132,6 +133,9 @@
   @media (max-width: 560px) {
     .day { gap: 8px; }
     .warn { padding-left: 0; }
+    .shelf-card { padding: 16px 12px; }
+    .times { gap: 4px; }
+    input[type="time"] { padding: 6px 2px 6px 6px; min-width: 76px; }
   }
 </style>
 </head>
