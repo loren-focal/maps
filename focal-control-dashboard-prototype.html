@@ -7,77 +7,65 @@
 <link rel="stylesheet" href="focal-shared.css">
 <style>
   /* Header */
-  .header-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; width: 100%; }
+  .header-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-3); width: 100%; }
   .logo { display: flex; align-items: center; justify-self: start; }
   .logo svg { width: 100px; height: auto; }
   .restaurant-name { justify-self: center; }
   .support-link { justify-self: end; }
 
   /* Status section — same left-aligned label + row pattern as Quick Controls / Restaurant Map. */
-  .status-row { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .status-row { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
 
   /* Troubleshoot link only renders once heaters are actually offline — nothing to click when healthy. */
   #troubleshootLink { display: none; }
   #troubleshootLink.visible { display: inline-flex; }
 
   /* Quick controls */
-  .quick-controls .buttons-row { display: flex; gap: 16px; flex-wrap: wrap; }
-  .zone-select-card {
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 10px 18px; height: 44px;
-  }
-  .zone-select-card .label { font-size: 15px; font-weight: 600; color: #E5E7EB; white-space: nowrap; }
+  .quick-controls .buttons-row { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+  .zone-select-card .label { font-size: 15px; font-weight: 600; color: var(--title-dim); white-space: nowrap; }
 
   /* Map — no outer panel/frame; the individual zone/street/entrance boxes below carry the visual weight instead,
      so the map conserves horizontal space and doesn't need its own bordered container. */
   .map-canvas { --fade-color: var(--page); }
   .map-canvas.scroll-region::before, .map-canvas.scroll-region::after { top: 0; bottom: 0; }
   .map-canvas-scroll {
-    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
     overflow-x: auto;
   }
   /* Non-clickable map landmarks (street, entrance) get the same borderless "shelf" treatment as the rail
      groups below — no stroke — so they read as background context, distinct from the bordered, clickable
      zone cards next to them. */
   .street-bar {
-    width: 100%; background: rgba(255,255,255,0.025); border-radius: 12px;
-    height: 44px; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 700; color: #E5E7EB;
+    width: 100%; height: 44px; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--title-dim);
   }
   /* The map is a spatial diagram: zones never wrap. They shrink to fit the viewport instead of forcing a scroll. */
-  .map-zones { display: flex; gap: 12px; width: 100%; flex-wrap: nowrap; }
+  .map-zones { display: flex; gap: var(--space-3); width: 100%; flex-wrap: nowrap; }
   .map-zone-card {
-    flex: 1; min-width: 0; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    flex: 1; min-width: 0; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
     font-family: inherit;
   }
   .map-zone-card .rail-labels {
     display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--sub);
-    font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; text-transform: uppercase;
+    font-family: var(--font-mono); text-transform: uppercase;
     max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   }
   .map-zone-card .rail-labels .sep { color: var(--card-border); font-size: 14px; line-height: 1; }
   .map-entrance {
-    background: rgba(255,255,255,0.025); border-radius: 12px;
-    padding: 14px; font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap;
+    padding: var(--space-4); font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap;
   }
 
   /* Zone sections — no outer card/frame; the heater rail "shelf" backgrounds carry the visual grouping instead. */
   .zone-section {
-    scroll-margin-top: 24px;
+    scroll-margin-top: var(--space-6);
   }
-  .zone-section + .zone-section { margin-top: 8px; }
-  .set-all-btn {
-    flex: none;
-    display: inline-flex; align-items: center; gap: 10px;
-    padding: 8px 16px; height: 36px;
-    font-weight: 700; font-size: 14px;
-  }
+  .zone-section + .zone-section { margin-top: var(--space-2); }
 
   /* Heater rails mirror physical hardware layout, left-to-right — they must never wrap or shrink.
      On narrow viewports the row scrolls horizontally instead, keeping every rail at full, tappable size. */
   .scroll-region { position: relative; --fade-color: var(--card); }
   .scroll-region::before, .scroll-region::after {
-    content: ""; position: absolute; top: 0; bottom: 0; width: 32px; pointer-events: none;
+    content: ""; position: absolute; top: 0; bottom: 0; width: var(--space-8); pointer-events: none;
     z-index: 5; opacity: 0; transition: opacity 0.15s ease;
   }
   .scroll-region::before { left: 0; background: linear-gradient(to right, var(--fade-color), transparent); }
@@ -86,31 +74,31 @@
   .scroll-region.can-scroll-end::after { opacity: 1; }
   .scroll-region .scroll-hint {
     position: absolute; top: 50%; transform: translateY(-50%);
-    width: 28px; height: 28px; border-radius: 50%;
+    width: 28px; height: 28px; border-radius: var(--radius-full);
     background: rgba(9,13,22,0.85); border: 1px solid var(--card-border);
     display: flex; align-items: center; justify-content: center;
     color: var(--sub); pointer-events: none; z-index: 6;
     opacity: 0; transition: opacity 0.15s ease;
   }
   .scroll-region .scroll-hint svg { width: 14px; height: 14px; }
-  .scroll-region .scroll-hint.left { left: 4px; }
-  .scroll-region .scroll-hint.right { right: 4px; }
+  .scroll-region .scroll-hint.left { left: var(--space-1); }
+  .scroll-region .scroll-hint.right { right: var(--space-1); }
   .scroll-region.can-scroll-start .scroll-hint.left { opacity: 1; }
   .scroll-region.can-scroll-end .scroll-hint.right { opacity: 1; }
 
-  .heaters-row-scroll { display: flex; gap: 32px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .heaters-row-scroll { display: flex; gap: var(--space-8); flex-wrap: nowrap; overflow-x: auto; padding-bottom: var(--space-1); }
   .heater-group {
-    display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none;
-    background: rgba(255,255,255,0.025); border-radius: 16px; padding: 12px 8px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: var(--space-3); flex: none;
+    padding: var(--space-3) var(--space-2) var(--space-3);
   }
   .heater-group .rail-label {
-    font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 600;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 600;
     letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub);
     text-align: center;
   }
   .heater-group .rail-heaters { display: flex; gap: 0px; }
 
-  .heater { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 80px; }
+  .heater { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 80px; }
   /* Dim only the pill graphic, not the whole unit — the offline icon (below) stays at full opacity,
      as vibrant as the red status text elsewhere on the page, since it's the one thing actively worth noticing. */
   .heater.offline .heater-unit svg.pill-svg { opacity: 0.4; }
@@ -153,78 +141,80 @@
      shared .btn fill/border/shadow and just shows the three lines in a dim, low-contrast color. */
   .overflow-btn {
     background: none; border: none; box-shadow: none;
-    padding: 8px; border-radius: 8px; margin-top: 4px;
+    padding: var(--space-2); border-radius: var(--radius-sm); margin-top: var(--space-1);
     display: flex; align-items: center; justify-content: center;
   }
   .overflow-btn:active { transform: scale(0.94); }
   @media (hover: hover) {
     .overflow-btn:hover { background: rgba(255,255,255,0.06); }
-    .overflow-btn:hover svg rect { fill: #E5E7EB; }
+    .overflow-btn:hover svg rect { fill: var(--title-dim); }
   }
   .overflow-btn svg { width: 16px; height: 12px; }
   .overflow-btn svg rect { fill: var(--sub); transition: fill 0.15s ease; }
 
   /* Footer legend */
-  .legend { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--sub); padding-top: 8px; }
-  .legend span { display: inline-flex; align-items: center; gap: 7px; }
-  .swatch { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .legend { display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--sub); padding-top: var(--space-2); }
+  .legend span { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .swatch { width: 11px; height: 11px; border-radius: var(--radius-full); display: inline-block; }
+  .swatch.purple { background: var(--purple); }
+  .swatch.orange { background: var(--orange); }
   .swatch.ring { background: var(--led-off); }
   .swatch.white { background: var(--led-on); }
 
   /* Modal (quick-set + overflow) */
+  /* Darker, more opaque scrim than a typical modal overlay — the goal is to pull focus almost
+     entirely onto the sheet's options, not let the dashboard read through underneath it. */
   .modal-scrim {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.82);
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 50;
-    padding: 20px;
+    padding: var(--space-5);
   }
   .modal-scrim.open { opacity: 1; pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) {
+    .modal-scrim, .modal-scrim .sheet { transition: none; }
+  }
 
   .sheet {
-    background: #141720; border: 1px solid #242936; border-radius: 20px;
-    padding: 24px; width: 100%; max-width: 360px;
-    display: flex; flex-direction: column; gap: 20px;
+    background: var(--sheet-bg); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-xl);
+    padding: var(--space-6); width: 100%; max-width: 360px;
+    display: flex; flex-direction: column; gap: var(--space-5);
     transform: translateY(12px); transition: transform 0.15s ease;
   }
   .modal-scrim.open .sheet { transform: translateY(0); }
 
   .sheet-header { display: flex; align-items: flex-end; justify-content: space-between; }
   .sheet-header .title { font-size: 22px; font-weight: 700; color: #fff; }
-  .sheet-header .subtitle { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #8C92AC; margin-top: 4px; }
-  .sheet-header .cmd { font-size: 10px; color: #4E5366; }
+  .sheet-header .title.title-sm { font-size: 16px; }
+  .sheet-header .subtitle { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub); margin-top: var(--space-1); }
+  .sheet-header .cmd { font-size: 10px; color: var(--muted-dark); }
 
-  .options-stack { display: flex; flex-direction: column; gap: 10px; }
+  .options-stack { display: flex; flex-direction: column; gap: var(--space-3); }
   .option-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px; text-align: left;
+    padding: var(--space-4); text-align: left;
   }
   .option-row .led-group { display: flex; gap: 5px; }
-  .option-row .led-group i { width: 8px; height: 8px; border-radius: 50%; background: #454f66; }
+  .option-row .led-group i { width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--muted-dark); }
   .option-row .led-group i.on { background: #fff; filter: drop-shadow(0 0 3px rgba(255,255,255,0.85)); }
-  .option-row .label { font-size: 15px; font-weight: 500; color: #E5E7EB; display: flex; align-items: center; gap: 8px; }
+  .option-row .label { font-size: 15px; font-weight: 500; color: var(--title-dim); display: flex; align-items: center; gap: var(--space-2); }
   .option-row.active { border-color: var(--btn-stroke-hover); background: var(--btn-fill-hover); }
   .option-row.active .label { color: #fff; font-weight: 700; }
-  .option-row.active .label::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+  .option-row.active .label::after { content: ""; width: 4px; height: 4px; border-radius: var(--radius-full); background: #fff; }
 
   .cancel-btn {
-    text-align: center; padding: 12px; font-weight: 600; text-transform: uppercase;
+    text-align: center; padding: var(--space-3); font-weight: 600; text-transform: uppercase;
   }
 
   /* Overflow action menu */
   .overflow-sheet .serial-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 4px; border-bottom: 1px solid #242936; margin-bottom: 4px;
-    font-size: 13px; color: #8C92AC;
+    padding: var(--space-2) var(--space-1); border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: var(--space-1);
+    font-size: 13px; color: var(--sub);
   }
-  .copy-btn { padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .copy-btn { padding: 6px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; }
   .copy-btn svg { width: 14px; height: 14px; }
-  .overflow-sheet .actions { display: flex; flex-direction: column; gap: 10px; }
-  /* Full-height tappable rows — these are the primary content of this modal, unlike the shorter
-     section-header action buttons (.set-all-btn/.save-btn) elsewhere. */
-  .action-row {
-    display: flex; align-items: center; gap: 10px; padding: 10px 18px; height: 44px;
-    text-align: left; font-size: 14px; font-weight: 700;
-  }
+  .overflow-sheet .actions { display: flex; flex-direction: column; gap: var(--space-3); }
   .action-row.danger { color: var(--danger); }
   .action-row svg { width: 16px; height: 16px; flex: none; }
 
@@ -234,7 +224,7 @@
   }
 
   @media (max-width: 480px) {
-    .header-top { grid-template-columns: 1fr 1fr; row-gap: 8px; }
+    .header-top { grid-template-columns: 1fr 1fr; row-gap: var(--space-2); }
     .restaurant-name { grid-column: 1 / -1; order: 1; justify-self: center; }
   }
 </style>
@@ -258,14 +248,14 @@
             <path d="M151.499 11.5836C150.816 9.93453 149.22 8.86683 147.435 8.86683C145.649 8.86683 144.053 9.9328 143.37 11.5836L134.031 34.1314H138.486L141.33 27.2685H153.543L156.386 34.1314H160.842L151.503 11.5836H151.499ZM142.882 23.5168L147.397 12.6185H147.473L151.987 23.5168H142.882Z" fill="#FAFAF0"/>
           </svg>
         </div>
-        <div class="restaurant-name">Little Shucker</div>
+        <h1 class="restaurant-name">Little Shucker</h1>
         <a class="text-btn support-link" href="https://loren-focal.github.io/external-docs/" target="_blank" rel="noopener">Support</a>
       </div>
     </div>
 
     <!-- Status -->
     <div class="status-section">
-      <div class="section-label mono">System Status</div>
+      <h2 class="section-label mono">System Status</h2>
       <div class="status-row">
         <div class="status-pair">
           <div class="status-item">
@@ -287,15 +277,15 @@
 
     <!-- Quick Controls -->
     <div class="quick-controls">
-      <div class="section-label mono">Set Heat Quickly</div>
+      <h2 class="section-label mono">Set Heat Quickly</h2>
       <div class="buttons-row">
-        <button class="btn zone-select-card" data-scope="all" type="button">
+        <button class="btn btn-full zone-select-card" data-scope="all" type="button">
           <span class="label">All Zones</span>
         </button>
-        <button class="btn zone-select-card" data-scope="1" type="button">
+        <button class="btn btn-full zone-select-card" data-scope="1" type="button">
           <span class="label">Zone 1</span>
         </button>
-        <button class="btn zone-select-card" data-scope="2" type="button">
+        <button class="btn btn-full zone-select-card" data-scope="2" type="button">
           <span class="label">Zone 2</span>
         </button>
       </div>
@@ -303,23 +293,23 @@
 
     <!-- Restaurant Map -->
     <div>
-      <div class="section-label mono">Restaurant Map</div>
+      <h2 class="section-label mono">Restaurant Map</h2>
       <div class="map-canvas scroll-region" id="mapCanvas">
         <div class="scroll-hint left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
         <div class="scroll-hint right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         <div class="map-canvas-scroll" id="mapCanvasScroll">
-          <div class="street-bar">Clement St</div>
+          <div class="street-bar shelf-strip">Clement St</div>
           <div class="map-zones">
-            <button class="btn map-zone-card" data-jump="1" type="button">
+            <button class="btn map-zone-card" data-jump="1" type="button" aria-label="Zone 1, Rail 1 and Rail 2 — jump to Zone 1">
               Zone 1
-              <span class="rail-labels"><span>Rail 1</span><span class="sep">&middot;</span><span>Rail 2</span></span>
+              <span class="rail-labels" aria-hidden="true"><span>Rail 1</span><span class="sep">&middot;</span><span>Rail 2</span></span>
             </button>
-            <button class="btn map-zone-card" data-jump="2" type="button">
+            <button class="btn map-zone-card" data-jump="2" type="button" aria-label="Zone 2, Rail 3, Rail 4, and Rail 5 — jump to Zone 2">
               Zone 2
-              <span class="rail-labels"><span>Rail 3</span><span class="sep">&middot;</span><span>Rail 4</span><span class="sep">&middot;</span><span>Rail 5</span></span>
+              <span class="rail-labels" aria-hidden="true"><span>Rail 3</span><span class="sep">&middot;</span><span>Rail 4</span><span class="sep">&middot;</span><span>Rail 5</span></span>
             </button>
           </div>
-          <div class="map-entrance">Restaurant Entrance</div>
+          <div class="map-entrance shelf-strip">Restaurant Entrance</div>
         </div>
       </div>
     </div>
@@ -327,8 +317,8 @@
     <!-- Zone 1: two groups of three -->
     <div class="zone-section" id="zone-1">
       <div class="section-header">
-        <div class="title mono">Zone 1</div>
-        <button class="btn set-all-btn" data-scope="1" type="button">
+        <h2 class="title mono">Zone 1</h2>
+        <button class="btn btn-section-action" data-scope="1" type="button">
           <span>Set Zone 1 Heat</span>
         </button>
       </div>
@@ -336,11 +326,11 @@
         <div class="scroll-hint left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
         <div class="scroll-hint right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         <div class="heaters-row-scroll">
-          <div class="heater-group">
+          <div class="heater-group shelf-card">
             <div class="rail-label mono">Rail 1</div>
             <div class="rail-heaters" data-group></div>
           </div>
-          <div class="heater-group">
+          <div class="heater-group shelf-card">
             <div class="rail-label mono">Rail 2</div>
             <div class="rail-heaters" data-group></div>
           </div>
@@ -351,8 +341,8 @@
     <!-- Zone 2: three groups of two -->
     <div class="zone-section" id="zone-2">
       <div class="section-header">
-        <div class="title mono">Zone 2</div>
-        <button class="btn set-all-btn" data-scope="2" type="button">
+        <h2 class="title mono">Zone 2</h2>
+        <button class="btn btn-section-action" data-scope="2" type="button">
           <span>Set Zone 2 Heat</span>
         </button>
       </div>
@@ -360,15 +350,15 @@
         <div class="scroll-hint left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
         <div class="scroll-hint right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>
         <div class="heaters-row-scroll">
-          <div class="heater-group">
+          <div class="heater-group shelf-card">
             <div class="rail-label mono">Rail 3</div>
             <div class="rail-heaters" data-group></div>
           </div>
-          <div class="heater-group">
+          <div class="heater-group shelf-card">
             <div class="rail-label mono">Rail 4</div>
             <div class="rail-heaters" data-group></div>
           </div>
-          <div class="heater-group">
+          <div class="heater-group shelf-card">
             <div class="rail-label mono">Rail 5</div>
             <div class="rail-heaters" data-group></div>
           </div>
@@ -378,8 +368,8 @@
 
     <!-- Footer legend -->
     <div class="legend">
-      <span><i class="swatch" style="background:var(--purple)"></i>Spot 1</span>
-      <span><i class="swatch" style="background:var(--orange)"></i>Spot 2</span>
+      <span><i class="swatch purple"></i>Spot 1</span>
+      <span><i class="swatch orange"></i>Spot 2</span>
       <span><i class="swatch white"></i>Heat level</span>
       <span><i class="swatch ring"></i>Off</span>
     </div>
@@ -406,7 +396,7 @@
   <div class="modal-scrim" id="overflowModalScrim">
     <div class="sheet overflow-sheet" role="dialog" aria-modal="true" aria-labelledby="overflowModalTitle">
       <div class="sheet-header">
-        <div class="title" id="overflowModalTitle" style="font-size:16px;">Heater Actions</div>
+        <div class="title title-sm" id="overflowModalTitle">Heater Actions</div>
       </div>
       <div class="serial-row">
         <span class="mono" id="overflowSerial"></span>
@@ -415,15 +405,15 @@
         </button>
       </div>
       <div class="actions">
-        <button class="btn action-row" data-action="identify" type="button">
+        <button class="btn btn-full action-row" data-action="identify" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           Identify heater
         </button>
-        <button class="btn action-row" data-action="swap" type="button">
+        <button class="btn btn-full action-row" data-action="swap" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           Swap heater
         </button>
-        <button class="btn action-row danger" data-action="remove" type="button">
+        <button class="btn btn-full action-row danger" data-action="remove" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           Remove heater
         </button>
@@ -432,8 +422,9 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="focal-shared.js"></script>
 <script>
 (function () {
   document.getElementById('scheduleBtn').addEventListener('click', () => {
@@ -441,50 +432,9 @@
   });
 
   // ---- Schedule status, shared with focal-scheduling-prototype.html via localStorage ----
-  const SCHEDULE_STORAGE_KEY = "focal-schedule-state";
-  const SCHEDULE_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-  // Real current day/time. SCHEDULE_DAYS is Monday-first; JS getDay() is Sunday-first (0=Sun), so remap.
-  function getScheduleNowDayIdx() {
-    return (new Date().getDay() + 6) % 7;
-  }
-  function getScheduleNowMin() {
-    const d = new Date();
-    return d.getHours() * 60 + d.getMinutes();
-  }
-
-  // Mirrors focal-scheduling-prototype.html's DEFAULT_STATE so first-load (before that page is ever visited) matches.
-  const SCHEDULE_DEFAULT_STATE = {
-    on: true,
-    days: SCHEDULE_DAYS.map((d, i) => ({
-      closed: i === 2,
-      start: "11:30",
-      end: i <= 1 ? "18:00" : "22:00",
-    })),
-  };
-
-  function loadScheduleState() {
-    try {
-      const raw = localStorage.getItem(SCHEDULE_STORAGE_KEY);
-      if (!raw) return SCHEDULE_DEFAULT_STATE;
-      const parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.days) || parsed.days.length !== 7) return SCHEDULE_DEFAULT_STATE;
-      return parsed;
-    } catch (e) {
-      return SCHEDULE_DEFAULT_STATE;
-    }
-  }
-
-  function scheduleToMinutes(t) {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  }
-  function scheduleTo12(t) {
-    let [h, m] = t.split(":").map(Number);
-    const ap = h >= 12 ? "PM" : "AM";
-    h = h % 12; if (h === 0) h = 12;
-    return h + ":" + String(m).padStart(2, "0") + " " + ap;
-  }
+  // State shape, defaults, and date math live in focal-shared.js (window.FocalSchedule) so both
+  // pages read from one definition instead of two independently-maintained copies.
+  const Schedule = window.FocalSchedule;
 
   // Heater controls lock only when Schedule is On but currently Inactive (outside today's hours) —
   // when Schedule is Off entirely, heaters stay staff/guest-controlled by design.
@@ -500,24 +450,19 @@
   function renderScheduleStatus() {
     const dotEl = document.getElementById('scheduleDot');
     const textEl = document.getElementById('scheduleStatusText');
-    const sched = loadScheduleState();
-    if (!sched || !sched.on) {
+    const sched = Schedule.load();
+    if (!sched.on) {
       dotEl.className = 'dot inactive';
       textEl.textContent = 'Schedule Off';
       heaterControlsLocked = false;
       updateHeaterLockUI();
       return;
     }
-    const nowDayIdx = getScheduleNowDayIdx();
-    const nowMin = getScheduleNowMin();
-    const today = sched.days[nowDayIdx];
-    const activeNow = !today.closed
-      && nowMin >= scheduleToMinutes(today.start)
-      && nowMin < scheduleToMinutes(today.end);
 
-    if (activeNow) {
+    if (Schedule.isActiveNow(sched)) {
+      const today = sched.days[Schedule.getNowDayIndex()];
       dotEl.className = 'dot active';
-      textEl.textContent = 'Active until ' + scheduleTo12(today.end);
+      textEl.textContent = 'Active until ' + Schedule.to12Hour(today.end);
       heaterControlsLocked = false;
       updateHeaterLockUI();
       return;
@@ -525,29 +470,22 @@
 
     dotEl.className = 'dot inactive';
     heaterControlsLocked = true;
-    if (!today.closed && nowMin < scheduleToMinutes(today.start)) {
-      lockedUntilText = scheduleTo12(today.start);
+    const resume = Schedule.nextResume(sched);
+    if (!resume) {
+      lockedUntilText = '';
+      textEl.textContent = 'Inactive';
+    } else if (resume.label === 'today') {
+      lockedUntilText = Schedule.to12Hour(resume.time);
       textEl.textContent = 'Inactive until ' + lockedUntilText;
-      updateHeaterLockUI();
-      return;
+    } else {
+      lockedUntilText = resume.label + ', ' + Schedule.to12Hour(resume.time);
+      textEl.textContent = 'Inactive until ' + lockedUntilText;
     }
-    for (let offset = 1; offset <= 7; offset++) {
-      const idx = (nowDayIdx + offset) % 7;
-      const day = sched.days[idx];
-      if (!day.closed) {
-        lockedUntilText = SCHEDULE_DAYS[idx] + ', ' + scheduleTo12(day.start);
-        textEl.textContent = 'Inactive until ' + lockedUntilText;
-        updateHeaterLockUI();
-        return;
-      }
-    }
-    lockedUntilText = '';
-    textEl.textContent = 'Inactive';
     updateHeaterLockUI();
   }
 
   window.addEventListener('storage', (e) => {
-    if (e.key === SCHEDULE_STORAGE_KEY) renderScheduleStatus();
+    if (e.key === Schedule.STORAGE_KEY) renderScheduleStatus();
   });
 
   // The 'storage' event above only fires in OTHER tabs, never the tab that wrote the change — so it can't
@@ -615,7 +553,16 @@
   }
   renderConnectivityStatus();
 
-  function buildSVG(hid) {
+  function buildSVG(heater) {
+    const hid = heater.id;
+    // Accessible labels use the customer-facing serial, never the internal id (HT-01 etc. is never
+    // shown in UI — see the HEATERS comment above). Offline heaters are removed from the tab order
+    // entirely: their zones are already pointer-events:none and tap()/keydown both no-op for them,
+    // so leaving them focusable let keyboard users land on a control that silently does nothing.
+    const hLabel = heater.serial;
+    const tabIdx = heater.offline ? '-1' : '0';
+    const st = state[hid];
+
     // No outer pill wrapper: the SVG's own bodyW/height define the touch-target column directly,
     // so the button shapes themselves read as one unit via matching width + generous internal gaps.
     // STROKE_PAD keeps the 1.5px stroke from being clipped by the viewBox on the straight edges
@@ -681,27 +628,27 @@
     }
 
     return '' +
-    '<svg class="pill-svg" viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="' + hid + ' heater control">' +
-      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Spot 1">' +
+    '<svg class="pill-svg" viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="Heater ' + hLabel + (heater.offline ? ' (offline)' : '') + '">' +
+      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="' + tabIdx + '" role="button" aria-label="' + hLabel + ' Spot 1: set level">' +
         '<path class="focusable" d="' + topPath() + '" fill="var(--btn-fill)" stroke="var(--btn-stroke)" stroke-width="1.5"/>' +
         '<circle cx="' + cx + '" cy="' + topIdY + '" r="' + idR + '" fill="var(--purple)"/>' +
         '<path class="flash" d="' + topPath() + '"/>' +
       '</g>' +
-      '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Spot 2">' +
+      '<g class="zone level-readout" data-heater="' + hid + '" data-target="top" tabindex="' + tabIdx + '" role="button" aria-label="' + hLabel + ' Spot 1: current level, ' + LEVEL_LABEL[LEVELS[st.top]] + '">' +
         '<rect class="focusable hit-target" x="' + bx + '" y="' + (topRowY - ledH / 2 - 4) + '" width="' + bodyW + '" height="' + (ledH + 8) + '" rx="' + (ledH / 2) + '" fill="transparent"/>' +
         ledRow("top", topRowY) +
       '</g>' +
-      '<g class="zone" data-heater="' + hid + '" data-target="both" tabindex="0" role="button" aria-label="Both spots">' +
+      '<g class="zone" data-heater="' + hid + '" data-target="both" tabindex="' + tabIdx + '" role="button" aria-label="' + hLabel + ' both spots: set level">' +
         '<rect class="focusable" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '" fill="var(--btn-fill)" stroke="var(--btn-stroke)" stroke-width="1.5"/>' +
         '<circle cx="' + midCx + '" cy="' + (midCy - midDotGap) + '" r="' + idR + '" fill="var(--purple)"/>' +
         '<circle cx="' + midCx + '" cy="' + (midCy + midDotGap) + '" r="' + idR + '" fill="var(--orange)"/>' +
         '<rect class="flash" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '"/>' +
       '</g>' +
-      '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot level">' +
+      '<g class="zone level-readout" data-heater="' + hid + '" data-target="bottom" tabindex="' + tabIdx + '" role="button" aria-label="' + hLabel + ' Spot 2: current level, ' + LEVEL_LABEL[LEVELS[st.bottom]] + '">' +
         '<rect class="focusable hit-target" x="' + bx + '" y="' + (botRowY - ledH / 2 - 4) + '" width="' + bodyW + '" height="' + (ledH + 8) + '" rx="' + (ledH / 2) + '" fill="transparent"/>' +
         ledRow("bottom", botRowY) +
       '</g>' +
-      '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot">' +
+      '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="' + tabIdx + '" role="button" aria-label="' + hLabel + ' Spot 2: set level">' +
         '<path class="focusable" d="' + botPath() + '" fill="var(--btn-fill)" stroke="var(--btn-stroke)" stroke-width="1.5"/>' +
         '<circle cx="' + cx + '" cy="' + botIdY + '" r="' + idR + '" fill="var(--orange)"/>' +
         '<path class="flash" d="' + botPath() + '"/>' +
@@ -717,6 +664,15 @@
       const target = d.getAttribute("data-target");
       const n = parseInt(d.getAttribute("data-led"), 10);
       d.setAttribute("fill", n <= st[target] ? "var(--led-on)" : "var(--led-off)");
+    });
+    // Keep the "current level" accessible labels in sync with the LEDs they describe — the label
+    // text embeds the level name, so it goes stale after every tap unless refreshed here too.
+    const meta = HEATERS.find((h) => h.id === hid);
+    const label = meta ? meta.serial : hid;
+    root.querySelectorAll(".zone.level-readout").forEach((z) => {
+      const target = z.getAttribute("data-target");
+      const spotName = target === "top" ? "Spot 1" : "Spot 2";
+      z.setAttribute("aria-label", label + " " + spotName + ": current level, " + LEVEL_LABEL[LEVELS[st[target]]]);
     });
   }
 
@@ -770,12 +726,14 @@
         col.className = 'heater' + (h.offline ? ' offline' : '');
         col.innerHTML =
           '<div class="heater-unit" id="heater-' + h.id + '">' +
-            buildSVG(h.id) +
-            '<svg class="offline-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
-              '<path d="M9.94026 4.27441C11.0677 4.59927 12.0954 5.20232 12.9289 6.02813C13.7623 6.85394 14.3749 7.87602 14.7102 9.00041H16.5001C17.2252 9.00042 17.9394 9.17562 18.5822 9.51109C19.2249 9.84656 19.7771 10.3324 20.1917 10.9272C20.6063 11.522 20.871 12.2081 20.9633 12.9272C21.0557 13.6464 20.9729 14.3772 20.7221 15.0574M17.7955 17.8103C17.3751 17.9365 16.9385 18.0005 16.4995 18.0003H7.99968C6.43068 18 4.90726 17.4726 3.67392 16.5027C2.44059 15.5328 1.56885 14.1767 1.19863 12.652C0.828416 11.1272 0.981182 9.52235 1.63241 8.09485C2.28364 6.66736 3.39557 5.50005 4.78974 4.78027M1 1L20.9996 21"/>' +
-            '</svg>' +
+            buildSVG(h) +
+            (h.offline ?
+              '<svg class="offline-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" role="img" aria-label="Offline">' +
+                '<path d="M9.94026 4.27441C11.0677 4.59927 12.0954 5.20232 12.9289 6.02813C13.7623 6.85394 14.3749 7.87602 14.7102 9.00041H16.5001C17.2252 9.00042 17.9394 9.17562 18.5822 9.51109C19.2249 9.84656 19.7771 10.3324 20.1917 10.9272C20.6063 11.522 20.871 12.2081 20.9633 12.9272C21.0557 13.6464 20.9729 14.3772 20.7221 15.0574M17.7955 17.8103C17.3751 17.9365 16.9385 18.0005 16.4995 18.0003H7.99968C6.43068 18 4.90726 17.4726 3.67392 16.5027C2.44059 15.5328 1.56885 14.1767 1.19863 12.652C0.828416 11.1272 0.981182 9.52235 1.63241 8.09485C2.28364 6.66736 3.39557 5.50005 4.78974 4.78027M1 1L20.9996 21"/>' +
+              '</svg>'
+            : '') +
           '</div>' +
-          '<button class="btn overflow-btn" data-overflow="' + h.id + '" type="button" aria-label="' + h.id + ' actions">' +
+          '<button class="btn overflow-btn" data-overflow="' + h.id + '" type="button" aria-label="' + h.serial + ' actions">' +
             '<svg viewBox="0 0 16 12"><rect x="1" y="0" width="14" height="1.5" rx="0.75"/><rect x="1" y="5.25" width="14" height="1.5" rx="0.75"/><rect x="1" y="10.5" width="14" height="1.5" rx="0.75"/></svg>' +
           '</button>';
         card.appendChild(col);
@@ -825,6 +783,29 @@
     });
   });
 
+  // ---- Modal focus management, shared by both modals ----
+  // `inert` removes everything outside the scrim from the accessibility tree and tab order in one
+  // step — a robust, low-code focus trap without manually cycling Tab/Shift+Tab. Focus moves into
+  // the sheet on open and back to whatever triggered it on close, so keyboard/screen-reader users
+  // never lose their place or land on background controls while a modal is open.
+  const pageRoot = document.querySelector('.page');
+  let modalTriggerEl = null;
+
+  function openModal(scrimEl, triggerEl) {
+    modalTriggerEl = triggerEl || document.activeElement;
+    pageRoot.inert = true;
+    scrimEl.classList.add('open');
+    const focusable = scrimEl.querySelector('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    if (focusable) focusable.focus();
+  }
+
+  function closeModal(scrimEl) {
+    scrimEl.classList.remove('open');
+    pageRoot.inert = false;
+    if (modalTriggerEl && typeof modalTriggerEl.focus === 'function') modalTriggerEl.focus();
+    modalTriggerEl = null;
+  }
+
   // ---- Quick-set / Set Zone N modal ----
   const levelScrim = document.getElementById('levelModalScrim');
   const levelTitle = document.getElementById('levelModalTitle');
@@ -841,7 +822,7 @@
     return HEATERS.filter((h) => String(h.zone) === String(scope) && !h.offline);
   }
 
-  function openLevelModal(scope) {
+  function openLevelModal(scope, triggerEl) {
     activeScope = scope;
     levelTitle.textContent = scopeLabel(scope);
     levelOptions.innerHTML = LEVELS.slice().reverse().map((lvl) => {
@@ -853,7 +834,7 @@
         '</button>'
       );
     }).join('');
-    levelScrim.classList.add('open');
+    openModal(levelScrim, triggerEl);
   }
 
   function dotsForLevel(idx) {
@@ -866,7 +847,7 @@
   }
 
   function closeLevelModal() {
-    levelScrim.classList.remove('open');
+    closeModal(levelScrim);
     activeScope = null;
   }
 
@@ -876,7 +857,7 @@
         showToast('Schedule is inactive until ' + (lockedUntilText || 'the next scheduled hours'));
         return;
       }
-      openLevelModal(btn.getAttribute('data-scope'));
+      openLevelModal(btn.getAttribute('data-scope'), btn);
     });
   });
 
@@ -903,10 +884,10 @@
     overflowHeaterId = btn.getAttribute('data-overflow');
     const meta = HEATERS.find((h) => h.id === overflowHeaterId);
     document.getElementById('overflowSerial').textContent = meta ? meta.serial : '';
-    overflowScrim.classList.add('open');
+    openModal(overflowScrim, btn);
   });
 
-  function closeOverflowModal() { overflowScrim.classList.remove('open'); overflowHeaterId = null; }
+  function closeOverflowModal() { closeModal(overflowScrim); overflowHeaterId = null; }
   document.getElementById('overflowCancelBtn').addEventListener('click', closeOverflowModal);
   overflowScrim.addEventListener('click', (e) => { if (e.target === overflowScrim) closeOverflowModal(); });
 

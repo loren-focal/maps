@@ -6,11 +6,9 @@
 <title>Scheduling — Focal Control Prototype</title>
 <link rel="stylesheet" href="focal-shared.css">
 <style>
-  .page { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
-
   /* Header (matches dashboard prototype) — Dashboard link stays left-aligned next to the restaurant
      name at every width; there's always room for both on one line, so it never needs to stack. */
-  .header-top { display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; position: relative; }
+  .header-top { display: flex; align-items: center; justify-content: center; gap: var(--space-4); width: 100%; position: relative; }
   .back-btn { position: absolute; left: 0; }
   .back-btn svg { width: 14px; height: 14px; flex: none; }
 
@@ -20,13 +18,13 @@
      toggle states. Below the header, a shelf-card (same borderless dark background as the heater
      rail groups) holds the plain description copy — content, not a control, non-button treatment. */
   .schedule-description { font-size: 14px; line-height: 1.6; color: var(--sub); margin: 0; }
-  .learn-more-link { white-space: nowrap; margin-left: 4px; }
-  .section-header .title-row { display: flex; flex-direction: column; gap: 12px; }
+  .learn-more-link { white-space: nowrap; margin-left: var(--space-1); }
+  .section-header .title-row { display: flex; flex-direction: column; gap: var(--space-3); }
 
   /* Switch keeps its pill/knob shape, but picks up .btn's border + shadow depth so it reads as
      part of the same button system as every other control, not a flat form widget. */
   .switch {
-    flex: none; width: 46px; height: 27px; border-radius: 999px;
+    flex: none; width: 46px; height: 27px; border-radius: var(--radius-full);
     background: var(--btn-fill); border: 1px solid var(--btn-stroke);
     box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
     position: relative; cursor: pointer;
@@ -38,7 +36,7 @@
   /* On: track lights up white, same lit/unlit LED language used everywhere else on these pages. */
   .switch.on { background: #fff; border-color: #fff; }
   .switch .knob {
-    position: absolute; top: 2.5px; left: 2.5px; width: 20px; height: 20px; border-radius: 50%;
+    position: absolute; top: 2.5px; left: 2.5px; width: 20px; height: 20px; border-radius: var(--radius-full);
     background: #fff; transition: left 0.15s ease, background 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
   .switch.on .knob { left: 21.5px; background: var(--page); }
@@ -53,20 +51,20 @@
 
   /* Recommend-enabling callout, shown only when schedule is Off */
   .callout {
-    display: flex; gap: 10px; align-items: flex-start;
-    background: var(--panel); border: 1px solid var(--card-border); border-radius: 10px;
-    padding: 14px 16px; margin-top: 16px; font-size: 13px; line-height: 1.55; color: var(--sub);
+    display: flex; gap: var(--space-3); align-items: flex-start;
+    background: var(--panel); border: 1px solid var(--card-border); border-radius: var(--radius-md);
+    padding: var(--space-4); margin-top: var(--space-4); font-size: 13px; line-height: 1.55; color: var(--sub);
   }
-  .callout svg { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--sub); }
+  .callout svg { width: 18px; height: 18px; flex: none; margin-top: var(--space-1); color: var(--sub); }
 
   /* Weekly Hours section — same section-header pattern, Save Hours is the one action tied to it.
      Its title-row pairs the label with the unsaved-changes note horizontally (not stacked, unlike
      the Schedule header's title+status pairing above). */
-  .hours-section .section-header .title-row { flex-direction: row; align-items: center; gap: 10px; }
+  .hours-section .section-header .title-row { flex-direction: row; align-items: center; gap: var(--space-3); }
 
   .days { display: flex; flex-direction: column; }
   .day {
-    display: flex; align-items: center; gap: 12px; padding: 12px 4px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-1); flex-wrap: wrap;
     border-bottom: 1px solid rgba(255,255,255,0.06);
   }
   .day:last-child { border-bottom: none; }
@@ -74,8 +72,8 @@
   .times { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
   .dash { color: var(--sub); flex: none; }
   input[type="time"] {
-    font-family: inherit; font-size: 13px; padding: 7px 4px 7px 8px;
-    border: 1.5px solid var(--btn-stroke); border-radius: 8px;
+    font-family: inherit; font-size: 13px; padding: 7px var(--space-1) 7px var(--space-2);
+    border: 1.5px solid var(--btn-stroke); border-radius: var(--radius-sm);
     background: var(--btn-fill); color: var(--title);
     color-scheme: dark;
     width: 0; flex: 1 1 0; min-width: 84px;
@@ -90,7 +88,7 @@
      affects the icon's own alpha rather than adding a layer behind/over it. color-scheme:dark
      (set above) already makes Chromium render this glyph light, so no filter/invert is needed. */
   input[type="time"]::-webkit-calendar-picker-indicator {
-    margin-left: 6px; padding: 4px; border-radius: 6px;
+    margin-left: 6px; padding: var(--space-1); border-radius: var(--radius-sm);
     cursor: pointer; opacity: 0.75;
     transition: opacity 0.15s ease;
   }
@@ -110,13 +108,9 @@
     opacity: 0; transform: translateY(2px); transition: opacity 0.15s ease, transform 0.15s ease;
   }
   .unsaved-note.show { opacity: 1; transform: translateY(0); }
-  .unsaved-note .dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; flex: none; animation: pulse-dot 1.6s ease-in-out infinite; }
+  .unsaved-note .dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: #fff; flex: none; animation: pulse-dot 1.6s ease-in-out infinite; }
   @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-  .save-btn {
-    display: inline-flex; align-items: center;
-    padding: 8px 16px; height: 36px;
-    font-size: 14px; font-weight: 700;
-  }
+
   /* Dirty (unsaved changes, valid): brighter border, clearly demanding a click — same hover/lit
      language as the rest of the button system, not an alarm color. */
   .save-btn.dirty {
@@ -130,11 +124,14 @@
     .unsaved-note .dot { animation: none; }
   }
 
+  /* Values below are intentionally off the --space-* scale — every pixel here was hand-tuned to
+     fit day-name + two time inputs + the per-day switch on one line on a phone-width screen
+     without wrapping to a second row (see git history for the exact wrapping bug this fixed). */
   @media (max-width: 560px) {
-    .day { gap: 8px; }
+    .day { gap: var(--space-2); }
     .warn { padding-left: 0; }
-    .shelf-card { padding: 16px 12px; }
-    .times { gap: 4px; }
+    .shelf-card { padding: var(--space-4) var(--space-3); }
+    .times { gap: var(--space-1); }
     input[type="time"] { padding: 6px 2px 6px 6px; min-width: 76px; }
   }
 </style>
@@ -149,7 +146,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           Dashboard
         </button>
-        <div class="restaurant-name">Little Shucker</div>
+        <h1 class="restaurant-name">Little Shucker</h1>
       </div>
     </div>
 
@@ -157,7 +154,7 @@
     <div>
       <div class="section-header">
         <div class="title-row">
-          <div class="title mono">Schedule</div>
+          <h2 class="title mono">Schedule</h2>
           <div class="status-item">
             <span class="dot" id="statusDot"></span>
             <span class="text mono" id="statusText"></span>
@@ -169,12 +166,15 @@
       </div>
       <div class="shelf-card">
         <p class="schedule-description">
-        During scheduled hours, staff and guests (by QR code and automatically when seated) can turn heat on. Outside of scheduled hours, heat stays off. Turning scheduling off removes these limits and heat is controlled manually.          <a class="text-btn learn-more-link" href="https://loren-focal.github.io/external-docs/system-setup-control/#set-your-schedule" target="_blank" rel="noopener">Learn more</a>
+          During scheduled hours, staff and guests (by QR code and automatically when seated) can turn heat
+          on. Outside of scheduled hours, heat stays off. Turning scheduling off removes these limits and
+          heat is controlled manually.
+          <a class="text-btn learn-more-link" href="https://loren-focal.github.io/external-docs/system-setup-control/#set-your-schedule" target="_blank" rel="noopener">Learn more</a>
         </p>
       </div>
 
       <!-- Shown only when schedule is Off -->
-      <div class="callout" id="offCallout" style="display:none;">
+      <div class="callout" id="offCallout" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         <span>We recommend enabling scheduling so that heat turns on and off automatically when needed and stays off outside of operating hours.</span>
       </div>
@@ -184,10 +184,10 @@
     <div class="hours-section" id="hoursSection">
       <div class="section-header">
         <div class="title-row">
-          <div class="title mono">Weekly Hours</div>
+          <h2 class="title mono">Weekly Hours</h2>
           <span class="unsaved-note" id="unsavedNote"><span class="dot"></span>Unsaved changes</span>
         </div>
-        <button class="btn save-btn" id="saveHoursBtn" type="button">Save Hours</button>
+        <button class="btn btn-section-action save-btn" id="saveHoursBtn" type="button">Save Hours</button>
       </div>
       <div class="shelf-card">
         <div class="days" id="days"></div>
@@ -196,46 +196,25 @@
 
   </div>
 
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="focal-shared.js"></script>
 <script>
 (function () {
-  // Shared with focal-control-dashboard-prototype.html via localStorage — same key, same shape.
-  // { on: boolean, days: [{ closed, start, end }, ...] } indexed Monday..Sunday.
-  const STORAGE_KEY = "focal-schedule-state";
+  // Schedule state shape, defaults, and date math live in focal-shared.js (window.FocalSchedule),
+  // shared with focal-control-dashboard-prototype.html so the two pages can't drift apart.
+  const Schedule = window.FocalSchedule;
 
-  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-  const DEFAULT_STATE = {
-    on: true,
-    days: DAYS.map((d, i) => ({
-      closed: i === 2, // Wednesday closed, matching the reference screenshot's example
-      start: "11:30",
-      end: i <= 1 ? "18:00" : "22:00",
-    })),
-  };
-
-  function loadSharedState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.days) || parsed.days.length !== 7) return null;
-      return parsed;
-    } catch (e) {
-      return null;
-    }
-  }
+  const DAYS = Schedule.DAYS;
 
   function saveSharedState() {
-    const payload = { on: scheduleOn, days: state.map((d) => ({ closed: d.closed, start: d.start, end: d.end })) };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch (e) {}
+    Schedule.save({ on: scheduleOn, days: state });
   }
 
-  const loaded = loadSharedState() || DEFAULT_STATE;
+  const loaded = Schedule.load();
 
+  // Working copy adds `name` for rendering ("Mon"/"Tue"/...) — Schedule.save() strips it back down
+  // to the persisted {closed,start,end} shape, so this extra field never leaks into localStorage.
   const state = DAYS.map((d, i) => ({
     name: d,
     closed: loaded.days[i].closed,
@@ -247,15 +226,6 @@
   let lastSavedHours = state.map((d) => ({ closed: d.closed, start: d.start, end: d.end }));
 
   let scheduleOn = loaded.on;
-
-  // Real current day/time. DAYS is Monday-first; JS getDay() is Sunday-first (0=Sun), so remap.
-  function getNowDayIdx() {
-    return (new Date().getDay() + 6) % 7;
-  }
-  function getNowMin() {
-    const d = new Date();
-    return d.getHours() * 60 + d.getMinutes();
-  }
 
   const daysEl = document.getElementById("days");
   const scheduleSwitch = document.getElementById("scheduleSwitch");
@@ -271,62 +241,26 @@
     window.location.href = "focal-control-dashboard-prototype.html";
   });
 
-  function toMinutes(t) {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  }
-  function to12(t) {
-    let [h, m] = t.split(":").map(Number);
-    const ap = h >= 12 ? "PM" : "AM";
-    h = h % 12; if (h === 0) h = 12;
-    return h + ":" + String(m).padStart(2, "0") + " " + ap;
-  }
-
-  function isActiveNow() {
-    const today = state[getNowDayIdx()];
-    if (today.closed) return false;
-    const nowMin = getNowMin();
-    return nowMin >= toMinutes(today.start) && nowMin < toMinutes(today.end);
-  }
-
-  function nextResume() {
-    const nowDayIdx = getNowDayIdx();
-    const nowMin = getNowMin();
-    // If today is open and we're before it starts, resume is today.
-    const today = state[nowDayIdx];
-    if (!today.closed && nowMin < toMinutes(today.start)) {
-      return { label: "today", time: today.start };
-    }
-    // Otherwise scan forward up to 7 days for the next open day.
-    for (let offset = 1; offset <= 7; offset++) {
-      const idx = (nowDayIdx + offset) % 7;
-      const day = state[idx];
-      if (!day.closed) {
-        return { label: DAYS[idx], time: day.start };
-      }
-    }
-    return null;
-  }
-
   function renderStatus() {
     if (!scheduleOn) {
       statusDot.className = "dot inactive";
       statusText.textContent = "Off";
       return;
     }
-    if (isActiveNow()) {
-      const today = state[getNowDayIdx()];
+    const scheduleState = { days: state };
+    if (Schedule.isActiveNow(scheduleState)) {
+      const today = state[Schedule.getNowDayIndex()];
       statusDot.className = "dot active";
-      statusText.textContent = "Active until " + to12(today.end);
+      statusText.textContent = "Active until " + Schedule.to12Hour(today.end);
     } else {
       statusDot.className = "dot inactive";
-      const resume = nextResume();
+      const resume = Schedule.nextResume(scheduleState);
       if (!resume) {
         statusText.textContent = "Inactive";
       } else if (resume.label === "today") {
-        statusText.textContent = "Inactive until " + to12(resume.time);
+        statusText.textContent = "Inactive until " + Schedule.to12Hour(resume.time);
       } else {
-        statusText.textContent = "Inactive until " + resume.label + ", " + to12(resume.time);
+        statusText.textContent = "Inactive until " + resume.label + ", " + Schedule.to12Hour(resume.time);
       }
     }
   }
@@ -336,10 +270,10 @@
     const e = rowEl.querySelector(".t-end");
     const warn = rowEl.querySelector(".warn");
     if (day.closed || !s || !e) return true;
-    const bad = toMinutes(day.start) >= toMinutes(day.end);
+    const bad = Schedule.toMinutes(day.start) >= Schedule.toMinutes(day.end);
     s.classList.toggle("error", bad);
     e.classList.toggle("error", bad);
-    if (warn) warn.style.display = bad ? "block" : "none";
+    if (warn) warn.hidden = !bad;
     return !bad;
   }
 
@@ -386,7 +320,7 @@
             '<input type="time" class="t-end" data-i="' + i + '" value="' + d.end + '">' +
           '</div>' +
           switchHtml +
-          '<div class="warn" style="display:none;">End time must be after start time.</div>';
+          '<div class="warn" role="alert" hidden>End time must be after start time.</div>';
       }
       daysEl.appendChild(row);
     });
@@ -423,17 +357,20 @@
     saveSharedState();
     lastSavedHours = state.map((d) => ({ closed: d.closed, start: d.start, end: d.end }));
     updateSaveButtonState();
-    // Prototype only: no backend. Give lightweight confirming feedback.
+    // Prototype only: no backend. Give lightweight confirming feedback — via the toast (which has
+    // aria-live) rather than only swapping the button's own text, so screen-reader users get the
+    // same confirmation sighted users see.
     const original = saveHoursBtn.textContent;
     saveHoursBtn.textContent = "Saved";
     setTimeout(() => { saveHoursBtn.textContent = original; }, 1400);
+    showToast("Weekly hours saved");
   });
 
   function applyScheduleToggleUI() {
     scheduleSwitch.classList.toggle("on", scheduleOn);
     scheduleSwitch.setAttribute("aria-checked", String(scheduleOn));
-    hoursSection.style.display = scheduleOn ? "block" : "none";
-    offCallout.style.display = scheduleOn ? "none" : "flex";
+    hoursSection.hidden = !scheduleOn;
+    offCallout.hidden = scheduleOn;
     renderStatus();
   }
 
@@ -459,16 +396,26 @@
     if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleSchedule(); }
   });
 
-  // Reflect changes made on the dashboard tab (or another tab of this page) without a reload.
-  window.addEventListener("storage", (e) => {
-    if (e.key !== STORAGE_KEY) return;
-    const fresh = loadSharedState();
-    if (!fresh) return;
+  function reloadFromStorage() {
+    const fresh = Schedule.load();
     scheduleOn = fresh.on;
     fresh.days.forEach((d, i) => { state[i].closed = d.closed; state[i].start = d.start; state[i].end = d.end; });
     lastSavedHours = state.map((d) => ({ closed: d.closed, start: d.start, end: d.end }));
     renderDays();
     applyScheduleToggleUI();
+  }
+
+  // Reflect changes made on the dashboard tab (or another tab of this page) without a reload.
+  window.addEventListener("storage", (e) => {
+    if (e.key === Schedule.STORAGE_KEY) reloadFromStorage();
+  });
+
+  // The 'storage' event above only fires in OTHER tabs, never the tab that wrote the change — so it
+  // can't catch edits made on this same page in a prior visit. And browser back/forward can restore
+  // the page from bfcache without re-running this script at all, leaving stale state on screen.
+  // 'pageshow' with event.persisted covers that bfcache-restore case.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) reloadFromStorage();
   });
 
   renderDays();

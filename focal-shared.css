@@ -1,28 +1,72 @@
-/* Shared visual language for the Focal Control prototypes (dashboard + scheduling).
-   Keep tokens and primitives here so the pages can't drift out of sync with each other. */
+/* ============================================================================
+   Focal Control — shared stylesheet
+   ============================================================================
+   Used by both focal-control-dashboard-prototype.html and
+   focal-scheduling-prototype.html. Keep every token, color, and reusable
+   component rule here — the two pages must never redefine the same concept
+   with different values. If a page needs a one-off layout tweak, that's fine
+   in its own <style>, but colors/spacing/radius/typography come from here.
+
+   See README.md for the full design-token reference and page relationships.
+   ============================================================================ */
 
 :root {
-  --purple: #A78BFA;
-  --orange: #F97316;
+  /* ---- Color: surfaces ---- */
+  --page: #0A0D14;             /* app background */
+  --panel: #0E1117;            /* callouts, recessed panels */
+  --card: #111420;             /* solid card fallback (prefer --shelf-bg for the rail-card look) */
+  --card-border: #334155;
+  --shelf-bg: rgba(255, 255, 255, 0.025); /* the borderless "shelf" tint used over --page */
+  --sheet-bg: #10131A;          /* modal sheet — the actual composited color of --shelf-bg over
+                                    --page (2.5% white over #0A0D14), used as a flat value because
+                                    the sheet sits over an opaque scrim, not over --page directly */
+
+  /* ---- Color: text ---- */
+  --title: #F3F4F6;             /* primary text */
+  --title-dim: #E5E7EB;         /* slightly dimmer primary text (labels, section titles) */
+  --sub: #8B93A7;                /* secondary/muted text */
+  --muted-dark: #454F66;         /* dim icon/indicator color against dark fills (unlit dots, overflow lines resting state — brightens to --sub on hover/active) */
+
+  /* ---- Color: semantic ---- */
   --led-on: #FFFFFF;
   --led-off: #4C5568;
-  --page: #0A0D14;
-  --panel: #0E1117;
-  --card: #111420;
-  --card-border: #334155;
-  --title: #F3F4F6;
-  --sub: #8B93A7;
-  --accent: #10B981;
   --danger: #F87171;
+  --accent: #10B981;             /* reserved: not currently used by any component */
 
-  /* Unified button system: every tappable target shares this fill/stroke/hover language.
-     Flat fill (not a visible top-to-bottom gradient — that reads as dated skeuomorphism)
-     with a hint of blue. Depth comes from the border + shadow + a 1px inner top highlight,
-     not from shading the whole surface. */
+  /* ---- Color: heater identity ---- */
+  --purple: #A78BFA;             /* "Spot 1" identity color */
+  --orange: #F97316;             /* "Spot 2" identity color */
+
+  /* ---- Color: buttons ----
+     Flat fill (not a visible top-to-bottom gradient — that reads as dated
+     skeuomorphism) with a hint of blue. Depth comes from the border + shadow
+     + a 1px inner top highlight, not from shading the whole surface. */
   --btn-fill: #1D222E;
   --btn-stroke: #616B80;
   --btn-stroke-hover: #E8EBF1;
   --btn-fill-hover: #272E3D;
+
+  /* ---- Spacing scale (4px base) ----
+     Use these instead of ad-hoc pixel values for gap/padding/margin. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  /* ---- Radius scale ---- */
+  --radius-sm: 8px;    /* inputs, small icon-buttons (copy button, overflow menu) */
+  --radius-md: 12px;   /* .btn, toast, callouts, non-clickable shelf strips */
+  --radius-lg: 16px;   /* shelf cards (rail groups, weekly-hours card) */
+  --radius-xl: 20px;   /* modal sheet */
+  --radius-full: 999px; /* pills, switches, dots */
+
+  /* ---- Typography ---- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -30,33 +74,56 @@ html, body { margin: 0; padding: 0; }
 body {
   background: var(--page);
   color: var(--title);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   min-height: 100vh;
-  padding: 32px 20px 80px;
+  padding: var(--space-8) var(--space-5) 80px;
 }
-.mono { font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; }
+.mono { font-family: var(--font-mono); }
 
-/* ---- Shared button system: every tappable target uses this exact fill/stroke/hover ---- */
+/* ============================================================================
+   Buttons
+   ============================================================================ */
+
+/* Primary button: every filled, bordered tappable target shares this exact
+   fill/stroke/hover language (zone-select cards, Set Zone Heat, Save Hours,
+   map zone cards, modal option rows, Cancel, action rows, etc). */
 .btn {
   background: var(--btn-fill);
-  border: 1.5px solid var(--btn-stroke); border-radius: 10px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-  cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; color: #fff;
+  border: 1.5px solid var(--btn-stroke);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 700; color: #fff;
   transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
 }
-.btn:active { transform: scale(0.98); box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); }
+.btn:active { transform: scale(0.98); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3); }
 .btn:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 /* Hover states are gated to devices with real hover capability (mouse/trackpad) — on touchscreens
    there's no "unhover" event, so :hover would otherwise stay stuck lit after every tap. Border
-   stays 1.5px at every state — only the color changes — same as the heater controls' hover/focus
-   stroke, so nothing shifts on hover. */
+   width never changes on hover (color only) so focused/hovered text never shifts. */
 @media (hover: hover) {
   .btn:hover {
     border-color: var(--btn-stroke-hover);
     background: var(--btn-fill-hover);
   }
   .btn:disabled:hover { border-color: var(--btn-stroke); background: var(--btn-fill); }
+}
+
+/* Section-action button: a shorter .btn variant for the one action tied to a
+   .section-header (e.g. "Set Zone 1 Heat", "Save Hours") — secondary in
+   weight to the primary buttons elsewhere on the page. */
+.btn.btn-section-action {
+  flex: none;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-4); height: 36px;
+}
+
+/* Full-height button: for primary, standalone actions that are the main
+   content of their area — Set Heat Quickly buttons, modal action rows. */
+.btn.btn-full {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-5); height: 44px;
 }
 
 /* Text-link button: a second, lighter-weight tappable style for actions that live away from dense
@@ -67,32 +134,53 @@ body {
   font: inherit; font-size: 12px; font-weight: 700; color: var(--title);
   text-transform: uppercase; letter-spacing: 0.06em;
   text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--sub);
-  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2);
   transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
+/* border-radius here is a hand-tuned focus-ring shape hugging the underlined text, not a content
+   container — intentionally outside the --radius-* scale. */
 .text-btn:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 3px; border-radius: 2px; }
 @media (hover: hover) {
   .text-btn:hover { color: #fff; text-decoration-color: #fff; }
 }
 
+/* ============================================================================
+   Toast
+   ============================================================================ */
+
+/* Sits around the bottom third of the viewport rather than hugging the very bottom edge — on tall
+   phones a small fixed bottom offset lands too close to the browser chrome / gesture bar to
+   comfortably notice. role="status" + aria-live is set in markup so screen readers announce it. */
 .toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-  background: #1c1f2b; border: 1px solid #2d3244; border-radius: 10px; padding: 12px 18px;
-  font-size: 13px; color: #E5E7EB; opacity: 0; pointer-events: none; transition: all 0.2s ease;
+  position: fixed; bottom: 30vh; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1C1F2B; border: 1px solid #2D3244; border-radius: var(--radius-md);
+  padding: var(--space-3) 18px;
+  font-size: 13px; color: var(--title-dim); opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   z-index: 60;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+}
 
-/* ---- Page shell + header, shared across every prototype page ---- */
-.page { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
-.header { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.restaurant-name { font-weight: 800; font-size: 20px; white-space: nowrap; }
+/* ============================================================================
+   Page shell + header
+   ============================================================================ */
+
+.page { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-7); }
+.header { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.restaurant-name { font: inherit; font-weight: 800; font-size: 20px; margin: 0; white-space: nowrap; }
+
+/* ============================================================================
+   Section headings
+   ============================================================================ */
 
 /* Section label: a plain uppercase heading for a page section with no associated action
    ("System Status", "Set Heat Quickly", "Restaurant Map", "Schedule"). */
 .section-label {
-  font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  color: #E5E7EB; margin-bottom: 12px;
+  font: inherit; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--title-dim); margin: 0 0 var(--space-3);
 }
 
 /* Section header: a row pairing an uppercase mono label with one right-aligned action button
@@ -101,30 +189,47 @@ body {
    the section's content sits in its own shelf-card/background right below, which already reads as
    a distinct block, so a bigger label + a slightly shorter button carry the separation instead. */
 .section-header {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
-  margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 .section-header .title {
   flex: none;
-  font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: 15px;
-  text-transform: uppercase; color: #E5E7EB;
+  font-family: var(--font-mono); font-weight: 700; font-size: 15px;
+  text-transform: uppercase; color: var(--title-dim);
 }
+
+/* ============================================================================
+   Status indicators
+   ============================================================================ */
 
 /* Status item: a status dot + label, used wherever a plain (non-button) status is shown inline
    (dashboard System Status row, Scheduling page's toggle row) — never styled as a button itself. */
 .status-pair { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.status-item { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; }
-.status-item .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-/* White when active/lit, dim when not — a mode indicator, not a health/success color. */
-.status-item .dot { background: var(--led-on); box-shadow: 0 0 4px rgba(255,255,255,0.7); }
+.status-item { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 14px; }
+.status-item .dot {
+  width: 8px; height: 8px; border-radius: var(--radius-full); flex: none;
+  /* Default/active: white when active/lit — a mode indicator, not a health/success color. */
+  background: var(--led-on); box-shadow: 0 0 4px rgba(255, 255, 255, 0.7);
+}
 .status-item .dot.inactive { background: var(--led-off); box-shadow: none; }
-.status-item .dot.offline { background: var(--danger); box-shadow: 0 0 4px rgba(248,113,113,0.7); }
+.status-item .dot.offline { background: var(--danger); box-shadow: 0 0 4px rgba(248, 113, 113, 0.7); }
 .status-item .text { color: var(--sub); }
 
+/* ============================================================================
+   Shelf card
+   ============================================================================ */
+
 /* Shelf card: the borderless, near-black "shelf" background used for the dashboard's heater-rail
-   groups and map landmarks — reused wherever non-interactive content needs a subtle background
-   grouping without looking like a bordered, clickable card. */
+   groups, map landmarks, and the Scheduling page's description/weekly-hours cards — reused wherever
+   non-interactive content needs a subtle background grouping without looking like a bordered,
+   clickable card. */
 .shelf-card {
-  background: rgba(255,255,255,0.025); border-radius: 16px;
-  padding: 20px;
+  background: var(--shelf-bg); border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+/* Shelf strip: the same borderless tint at a lower, fixed-height profile — the dashboard's map
+   landmarks (street bar, entrance) and any single-line, non-card shelf content. */
+.shelf-strip {
+  background: var(--shelf-bg); border-radius: var(--radius-md);
 }
