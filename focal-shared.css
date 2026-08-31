@@ -213,7 +213,7 @@ body {
 }
 .status-item .dot.inactive { background: var(--led-off); box-shadow: none; }
 .status-item .dot.offline { background: var(--danger); box-shadow: 0 0 4px rgba(248, 113, 113, 0.7); }
-.status-item .text { color: var(--sub); }
+.status-item .text { color: var(--title-dim); }
 
 /* ============================================================================
    Shelf card
