@@ -115,6 +115,12 @@
   .heaters-row.controls-locked .heater:not(.offline) .heater-unit { opacity: 0.65; }
   .heaters-row.controls-locked .heater:not(.offline) svg .zone { cursor: not-allowed; }
 
+  /* Same lock, same cursor cue, on the "Set Heat Quickly" / "Set Zone N Heat" buttons — they still
+     work (a click shows the "Schedule is inactive..." toast, same as tapping a locked heater), so
+     this isn't a disabled state, just a hover hint that the click won't do what it normally does. */
+  .zone-select-card.locked,
+  .btn-section-action.locked { cursor: not-allowed; }
+
   /* Color indicators (spot dots + LED rows) would visually clash with the offline icon overlay — hide them
      while offline, since there's nothing meaningful to indicate when the heater isn't reachable anyway. */
   .heater.offline svg circle:not(.led),
@@ -444,6 +450,12 @@
   function updateHeaterLockUI() {
     document.querySelectorAll('.heaters-row').forEach((row) => {
       row.classList.toggle('controls-locked', heaterControlsLocked);
+    });
+    // The "Set Heat Quickly" / "Set Zone N Heat" buttons hit the exact same lock (their click
+    // handler already no-ops with a toast — see the [data-scope] listener below), so they should
+    // show the same not-allowed cursor on hover instead of looking clickable until you try.
+    document.querySelectorAll('[data-scope]').forEach((btn) => {
+      btn.classList.toggle('locked', heaterControlsLocked);
     });
   }
 
