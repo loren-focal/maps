@@ -79,6 +79,10 @@
 
   /* Page body copy */
   .intro p { font-size: 14px; line-height: 1.6; color: var(--sub); margin: 0; }
+  .learn-more-link { color: var(--orange); font-weight: 600; text-decoration: none; white-space: nowrap; margin-left: 4px; }
+  @media (hover: hover) {
+    .learn-more-link:hover { text-decoration: underline; }
+  }
 
   /* Card shell, matching zone-section styling from the dashboard prototype */
   .card {
@@ -114,9 +118,14 @@
 
   /* Weekly hours grid */
   .hours-section { margin-top: 22px; }
+  .hours-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .hours-header-left { display: flex; align-items: center; gap: 10px; }
   .hours-label {
     font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--sub); margin-bottom: 10px;
+    color: var(--sub); margin: 0;
   }
   .days { border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; }
   .day {
@@ -145,7 +154,6 @@
   .link-btn:hover { background: rgba(245,144,13,0.12); }
   .warn { font-size: 12px; color: var(--danger); width: 100%; padding-left: 56px; }
 
-  .save-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 18px; }
   .unsaved-note {
     font-size: 12.5px; color: var(--orange); font-weight: 600;
     display: flex; align-items: center; gap: 6px;
@@ -169,6 +177,18 @@
   @media (prefers-reduced-motion: reduce) {
     .unsaved-note .dot { animation: none; }
   }
+
+  /* Divider between the Schedule toggle and the Weekly Hours section, so the two read as
+     distinct controls rather than one form with a single submit button. */
+  .toggle-hours-divider { border: none; border-top: 1px solid var(--card-border); margin: 20px 0 0; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1c1f2b; border: 1px solid #2d3244; border-radius: 10px; padding: 12px 18px;
+    font-size: 13px; color: #E5E7EB; opacity: 0; pointer-events: none; transition: all 0.2s ease;
+    z-index: 60;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   @media (max-width: 560px) {
     .header-top { flex-direction: column; }
@@ -206,6 +226,7 @@
         turned on by your staff, by your guests via QR code, and automatically when a guest is seated. Outside
         these hours, heaters stay off and can't be turned on. If scheduling is disabled, they will never turn
         on or off automatically.
+        <a class="learn-more-link" href="https://loren-focal.github.io/external-docs/system-setup-control/#set-your-schedule" target="_blank" rel="noopener">Learn more</a>
       </p>
     </div>
 
@@ -229,16 +250,21 @@
 
       <!-- Shown only when schedule is On -->
       <div class="hours-section" id="hoursSection">
-        <div class="hours-label mono">Weekly Hours</div>
-        <div class="days" id="days"></div>
-        <div class="save-row">
-          <span class="unsaved-note" id="unsavedNote"><span class="dot"></span>Unsaved changes</span>
+        <hr class="toggle-hours-divider">
+        <div class="hours-header" style="margin-top:20px;">
+          <div class="hours-header-left">
+            <div class="hours-label mono">Weekly Hours</div>
+            <span class="unsaved-note" id="unsavedNote"><span class="dot"></span>Unsaved changes</span>
+          </div>
           <button class="btn save-btn" id="saveHoursBtn" type="button">Save Hours</button>
         </div>
+        <div class="days" id="days"></div>
       </div>
     </div>
 
   </div>
+
+  <div class="toast" id="toast"></div>
 
 <script>
 (function () {
@@ -474,6 +500,17 @@
     scheduleOn = !scheduleOn;
     applyScheduleToggleUI();
     saveSharedState(); // instant apply: the toggle itself has no separate Save action
+    showToast(scheduleOn ? 'Schedule turned on' : 'Schedule turned off');
+  }
+
+  // ---- Toast ----
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
   }
 
   scheduleSwitch.addEventListener("click", toggleSchedule);

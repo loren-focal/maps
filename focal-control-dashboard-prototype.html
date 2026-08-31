@@ -44,12 +44,11 @@
   .logo { display: flex; align-items: center; position: absolute; left: 0; }
   .logo svg { width: 100px; height: auto; }
   .restaurant-name { font-weight: 800; font-size: 20px; }
-  .status-row { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   /* ---- Shared button system: every tappable target uses this exact fill/stroke/hover ---- */
   .btn {
     background: var(--btn-fill); border: 1.5px solid var(--btn-stroke); border-radius: 12px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
-    cursor: pointer; font: inherit; color: #fff;
+    cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; color: #fff;
     transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
   }
   .btn:active { transform: scale(0.98); }
@@ -60,24 +59,39 @@
     .btn:hover { border-color: var(--btn-stroke-hover); background: var(--btn-fill-hover); }
   }
 
+  .support-link {
+    position: absolute; right: 0;
+    padding: 8px 14px; text-decoration: none;
+    display: inline-flex; align-items: center;
+  }
+
+  /* Status section — same left-aligned label + row pattern as Quick Controls / Restaurant Map. */
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; }
   .schedule-btn {
     display: inline-flex; align-items: center; gap: 10px;
-    padding: 12px 14px;
+    padding: 10px 18px; height: 44px;
   }
   /* Schedule dot uses the same lit/unlit LED language as the heater controls, not health-status colors:
      it's a mode indicator, not an alert — white when active, dim when not. */
   .schedule-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--led-on); flex: none; box-shadow: 0 0 4px rgba(255,255,255,0.7); }
   .schedule-btn .dot.inactive { background: var(--led-off); box-shadow: none; }
-  .schedule-btn .text { font-size: 14px; color: #E5E7EB; }
+  .schedule-btn .text { font-size: 14px; }
   .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.85; transition: opacity 0.15s ease; }
   @media (hover: hover) {
     .schedule-btn:hover .pencil { opacity: 1; }
   }
-  /* Connectivity dot stays red/green — the one place a health alert genuinely belongs. */
-  .system-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #E5E7EB; }
-  .system-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
-  .system-status .dot.offline { background: var(--danger); }
-  .system-status.offline .mono { color: var(--danger); }
+
+  /* Connectivity always renders as the same neutral pill shape as every other button, whether or not it's
+     currently clickable — healthy state just has no href/cursor/hover behavior, so the row stays visually
+     balanced in both states. The wrench icon (not the whole pill) turns red when heaters are offline —
+     that's the one place a health alert lives, rather than recoloring the entire button. */
+  .system-status {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; height: 44px; text-decoration: none; cursor: default;
+  }
+  .system-status .fix-icon { display: none; width: 16px; height: 16px; flex: none; color: var(--danger); }
+  .system-status.offline { cursor: pointer; }
+  .system-status.offline .fix-icon { display: block; }
 
   /* Section shells */
   .section-label {
@@ -188,13 +202,22 @@
   .heater-group .rail-heaters { display: flex; gap: 0px; }
 
   .heater { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 80px; }
-  .heater.offline .heater-unit { opacity: 0.4; }
+  /* Dim only the pill graphic, not the whole unit — the offline icon (below) stays at full opacity,
+     as vibrant as the red status text elsewhere on the page, since it's the one thing actively worth noticing. */
+  .heater.offline .heater-unit svg.pill-svg { opacity: 0.4; }
   .heater.offline svg .zone { cursor: not-allowed; pointer-events: none; }
   .offline-icon {
     display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     width: 20px; height: 20px; color: var(--danger); pointer-events: none;
   }
   .heater.offline .offline-icon { display: block; }
+
+  /* Schedule-locked (Schedule On but outside hours) is visually distinct from offline (hardware unreachable):
+     locked heaters dim only slightly and keep their normal appearance/cursor feedback — nothing is broken,
+     the schedule is just not letting heat run right now. Offline heaters stay darker with the cloud-off icon. */
+  .heaters-row.controls-locked .heater:not(.offline) .heater-unit { opacity: 0.65; }
+  .heaters-row.controls-locked .heater:not(.offline) svg .zone { cursor: not-allowed; }
+
   /* Color indicators (spot dots + LED rows) would visually clash with the offline icon overlay — hide them
      while offline, since there's nothing meaningful to indicate when the heater isn't reachable anyway. */
   .heater.offline svg circle:not(.led),
@@ -303,6 +326,7 @@
   @media (max-width: 720px) {
     .header-top { flex-direction: column; }
     .logo { position: static; }
+    .support-link { position: static; }
   }
 </style>
 </head>
@@ -326,19 +350,26 @@
           </svg>
         </div>
         <div class="restaurant-name">Little Shucker</div>
+        <a class="btn support-link" href="https://loren-focal.github.io/external-docs/" target="_blank" rel="noopener">Support</a>
       </div>
+    </div>
+
+    <!-- Status -->
+    <div class="status-section">
+      <div class="section-label mono">System Status</div>
       <div class="status-row">
-        <div class="system-status" id="systemStatus">
-          <span class="dot" id="connectivityDot"></span>
-          <span class="mono" id="connectivityText">All Heaters Online</span>
-        </div>
         <button class="btn schedule-btn" id="scheduleBtn" type="button" aria-label="Edit schedule">
           <span class="dot" id="scheduleDot"></span>
-          <span class="text mono" id="scheduleStatusText">Schedule: Active until 10:30 PM</span>
+          <span class="text mono" id="scheduleStatusText">Active until 10:30 PM</span>
           <svg class="pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#E5E7EB">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
           </svg>
         </button>
+        <a class="btn system-status" id="systemStatus" target="_blank" rel="noopener">
+          <span class="dot" id="connectivityDot"></span>
+          <span class="mono" id="connectivityText">All Heaters Online</span>
+          <svg class="fix-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </a>
       </div>
     </div>
 
@@ -543,13 +574,26 @@
     return h + ":" + String(m).padStart(2, "0") + " " + ap;
   }
 
+  // Heater controls lock only when Schedule is On but currently Inactive (outside today's hours) —
+  // when Schedule is Off entirely, heaters stay staff/guest-controlled by design.
+  let heaterControlsLocked = false;
+  let lockedUntilText = '';
+
+  function updateHeaterLockUI() {
+    document.querySelectorAll('.heaters-row').forEach((row) => {
+      row.classList.toggle('controls-locked', heaterControlsLocked);
+    });
+  }
+
   function renderScheduleStatus() {
     const dotEl = document.getElementById('scheduleDot');
     const textEl = document.getElementById('scheduleStatusText');
     const sched = loadScheduleState();
     if (!sched || !sched.on) {
       dotEl.className = 'dot inactive';
-      textEl.textContent = 'Schedule: Off';
+      textEl.textContent = 'Schedule Off';
+      heaterControlsLocked = false;
+      updateHeaterLockUI();
       return;
     }
     const nowDayIdx = getScheduleNowDayIdx();
@@ -561,28 +605,49 @@
 
     if (activeNow) {
       dotEl.className = 'dot active';
-      textEl.textContent = 'Schedule: Active until ' + scheduleTo12(today.end);
+      textEl.textContent = 'Active until ' + scheduleTo12(today.end);
+      heaterControlsLocked = false;
+      updateHeaterLockUI();
       return;
     }
 
     dotEl.className = 'dot inactive';
+    heaterControlsLocked = true;
     if (!today.closed && nowMin < scheduleToMinutes(today.start)) {
-      textEl.textContent = 'Schedule: Inactive until ' + scheduleTo12(today.start);
+      lockedUntilText = scheduleTo12(today.start);
+      textEl.textContent = 'Inactive until ' + lockedUntilText;
+      updateHeaterLockUI();
       return;
     }
     for (let offset = 1; offset <= 7; offset++) {
       const idx = (nowDayIdx + offset) % 7;
       const day = sched.days[idx];
       if (!day.closed) {
-        textEl.textContent = 'Schedule: Inactive until ' + SCHEDULE_DAYS[idx] + ', ' + scheduleTo12(day.start);
+        lockedUntilText = SCHEDULE_DAYS[idx] + ', ' + scheduleTo12(day.start);
+        textEl.textContent = 'Inactive until ' + lockedUntilText;
+        updateHeaterLockUI();
         return;
       }
     }
-    textEl.textContent = 'Schedule: Inactive';
+    lockedUntilText = '';
+    textEl.textContent = 'Inactive';
+    updateHeaterLockUI();
   }
 
   window.addEventListener('storage', (e) => {
     if (e.key === SCHEDULE_STORAGE_KEY) renderScheduleStatus();
+  });
+
+  // The 'storage' event above only fires in OTHER tabs, never the tab that wrote the change — so it can't
+  // catch edits made on this same page in a prior visit. And browser back/forward can restore the page from
+  // bfcache without re-running this script at all, leaving stale schedule state on screen. 'pageshow' with
+  // event.persisted covers that bfcache-restore case; re-reading here keeps the schedule status current
+  // regardless of how the user arrived back at this page.
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      renderScheduleStatus();
+      renderConnectivityStatus();
+    }
   });
 
   renderScheduleStatus();
@@ -611,23 +676,28 @@
   ];
 
   const state = {};
-  HEATERS.forEach((h, i) => {
-    state[h.id] = { top: (i * 2) % 4, bottom: (i * 3 + 1) % 4 };
+  HEATERS.forEach((h) => {
+    state[h.id] = { top: 0, bottom: 0 };
   });
 
   // ---- Connectivity status: derived from how many heaters are offline ----
+  // Pill always renders with the same neutral button shape. Healthy: not a real link (no href, out of
+  // tab order, default cursor). Offline: becomes a real link straight to the troubleshooting guide, with
+  // a red wrench icon as the one health-alert signal — the button itself stays neutral, not alarm-colored.
+  const TROUBLESHOOT_URL = 'https://loren-focal.github.io/external-docs/fixit/';
   function renderConnectivityStatus() {
     const offlineCount = HEATERS.filter((h) => h.offline).length;
     const containerEl = document.getElementById('systemStatus');
-    const dotEl = document.getElementById('connectivityDot');
     const textEl = document.getElementById('connectivityText');
     if (offlineCount === 0) {
       containerEl.classList.remove('offline');
-      dotEl.classList.remove('offline');
+      containerEl.removeAttribute('href');
+      containerEl.setAttribute('tabindex', '-1');
       textEl.textContent = 'All Heaters Online';
     } else {
       containerEl.classList.add('offline');
-      dotEl.classList.add('offline');
+      containerEl.setAttribute('href', TROUBLESHOOT_URL);
+      containerEl.removeAttribute('tabindex');
       textEl.textContent = offlineCount + ' Heater' + (offlineCount === 1 ? '' : 's') + ' Offline';
     }
   }
@@ -751,6 +821,10 @@
   function tap(hid, target) {
     const meta = HEATERS.find((h) => h.id === hid);
     if (meta && meta.offline) return;
+    if (heaterControlsLocked) {
+      showToast('Schedule is inactive until ' + (lockedUntilText || 'the next scheduled hours'));
+      return;
+    }
     const st = state[hid];
     if (target === "top") st.top = nextDown(st.top);
     else if (target === "bottom") st.bottom = nextDown(st.bottom);
@@ -885,7 +959,13 @@
   }
 
   document.querySelectorAll('[data-scope]').forEach((btn) => {
-    btn.addEventListener('click', () => openLevelModal(btn.getAttribute('data-scope')));
+    btn.addEventListener('click', () => {
+      if (heaterControlsLocked) {
+        showToast('Schedule is inactive until ' + (lockedUntilText || 'the next scheduled hours'));
+        return;
+      }
+      openLevelModal(btn.getAttribute('data-scope'));
+    });
   });
 
   levelOptions.addEventListener('click', (e) => {
