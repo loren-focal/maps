@@ -232,9 +232,11 @@
       statusText.textContent = "Off";
       return;
     }
-    const scheduleState = { days: state };
+    // Uses lastSavedHours, not the live (possibly unsaved) `state` — this status describes what's
+    // actually in effect right now, same as the dashboard sees it, not a preview of pending edits.
+    const scheduleState = { days: lastSavedHours };
     if (Schedule.isActiveNow(scheduleState)) {
-      const today = state[Schedule.getNowDayIndex()];
+      const today = lastSavedHours[Schedule.getNowDayIndex()];
       statusDot.className = "dot active";
       statusText.textContent = "Active until " + Schedule.to12Hour(today.end);
     } else {
@@ -342,6 +344,7 @@
     saveSharedState();
     lastSavedHours = state.map((d) => ({ closed: d.closed, start: d.start, end: d.end }));
     updateSaveButtonState();
+    renderStatus();
     // Prototype only: no backend. Give lightweight confirming feedback — via the toast (which has
     // aria-live) rather than only swapping the button's own text, so screen-reader users get the
     // same confirmation sighted users see.
