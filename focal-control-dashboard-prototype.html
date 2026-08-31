@@ -60,13 +60,18 @@
     display: inline-flex; align-items: center; gap: 10px;
     padding: 12px 14px;
   }
-  .schedule-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
-  .schedule-btn .dot.inactive { background: var(--sub); }
+  /* Schedule dot uses the same lit/unlit LED language as the heater controls, not health-status colors:
+     it's a mode indicator, not an alert — white when active, dim when not. */
+  .schedule-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--led-on); flex: none; box-shadow: 0 0 4px rgba(255,255,255,0.7); }
+  .schedule-btn .dot.inactive { background: var(--led-off); box-shadow: none; }
   .schedule-btn .text { font-size: 14px; color: #E5E7EB; }
   .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.85; transition: opacity 0.15s ease; }
   .schedule-btn:hover .pencil { opacity: 1; }
+  /* Connectivity dot stays red/green — the one place a health alert genuinely belongs. */
   .system-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #E5E7EB; }
-  .system-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .system-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+  .system-status .dot.offline { background: var(--danger); }
+  .system-status.offline .mono { color: var(--danger); }
 
   /* Section shells */
   .section-label {
@@ -93,7 +98,7 @@
   .street-bar {
     width: 100%; background: #111420; border: 1px solid var(--card-border); border-radius: 12px;
     height: 44px; display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 600; color: #E5E7EB;
+    font-size: 14px; font-weight: 700; color: #E5E7EB;
   }
   /* The map is a spatial diagram: zones never wrap. They shrink to fit the viewport instead of forcing a scroll. */
   .map-zones { display: flex; gap: 12px; width: 100%; flex-wrap: nowrap; }
@@ -162,20 +167,20 @@
   .scroll-region.can-scroll-start .scroll-hint.left { opacity: 1; }
   .scroll-region.can-scroll-end .scroll-hint.right { opacity: 1; }
 
-  .heaters-row-scroll { display: flex; gap: 56px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .heaters-row-scroll { display: flex; gap: 32px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .heater-group {
     display: flex; flex-direction: column; align-items: center; gap: 10px; flex: none;
-    background: rgba(255,255,255,0.025); border-radius: 20px; padding: 14px 12px 12px;
+    background: rgba(255,255,255,0.025); border-radius: 16px; padding: 12px 8px 10px;
   }
   .heater-group .rail-label {
     font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 600;
     letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub);
     text-align: center;
   }
-  .heater-group .rail-heaters { display: flex; gap: 2px; }
+  .heater-group .rail-heaters { display: flex; gap: 0px; }
 
-  .heater { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100px; }
-  .heater.offline .pill-widget { opacity: 0.4; }
+  .heater { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 80px; }
+  .heater.offline .heater-unit { opacity: 0.4; }
   .heater.offline svg .zone { cursor: not-allowed; pointer-events: none; }
   .offline-icon {
     display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -183,15 +188,11 @@
   }
   .heater.offline .offline-icon { display: block; }
 
-  /* Oval wrapper that ties the three buttons of a heater together, per Figma */
-  .pill-widget {
-    position: relative;
-    background: #090D16; border: 1px solid var(--card-border); border-radius: 34px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-    padding: 2px; display: flex; align-items: center; justify-content: center;
-  }
+  /* No outer pill/oval wrapper: the matching-width buttons + LED bar read as one unit on their own.
+     This is a plain positioning anchor for the offline-icon overlay. */
+  .heater-unit { position: relative; display: flex; align-items: center; justify-content: center; }
 
-  svg.pill-svg { display: block; touch-action: manipulation; width: 76px; height: auto; }
+  svg.pill-svg { display: block; touch-action: manipulation; width: 70px; height: auto; }
   .zone { cursor: pointer; outline: none; }
   .zone .focusable { transition: stroke 0.15s ease, fill 0.15s ease; }
   .zone:hover .focusable:not(.hit-target) { stroke: var(--btn-stroke-hover); fill: var(--btn-fill-hover); }
@@ -203,7 +204,7 @@
   @keyframes flash { 0% { opacity: 0.14; } 100% { opacity: 0; } }
 
   .overflow-btn {
-    padding: 8px; border-radius: 8px;
+    padding: 8px; border-radius: 8px; margin-top: 4px;
     display: flex; align-items: center; justify-content: center;
   }
   .overflow-btn svg { width: 16px; height: 12px; }
@@ -264,8 +265,10 @@
   .copy-btn { padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
   .copy-btn svg { width: 14px; height: 14px; }
   .overflow-sheet .actions { display: flex; flex-direction: column; gap: 10px; }
+  /* Sized/styled to match .set-all-btn — consistent button proportions across modals. */
   .action-row {
-    display: flex; align-items: center; gap: 10px; padding: 12px 14px; text-align: left; font-size: 14px;
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px; height: 44px;
+    text-align: left; font-size: 14px; font-weight: 700;
   }
   .action-row.danger { color: var(--danger); }
   .action-row svg { width: 16px; height: 16px; flex: none; }
@@ -311,6 +314,10 @@
         <div class="restaurant-name">Little Shucker</div>
       </div>
       <div class="status-row">
+        <div class="system-status" id="systemStatus">
+          <span class="dot" id="connectivityDot"></span>
+          <span class="mono" id="connectivityText">All Heaters Online</span>
+        </div>
         <button class="btn schedule-btn" id="scheduleBtn" type="button" aria-label="Edit schedule">
           <span class="dot" id="scheduleDot"></span>
           <span class="text mono" id="scheduleStatusText">Schedule: Active until 10:30 PM</span>
@@ -318,10 +325,6 @@
             <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
           </svg>
         </button>
-        <div class="system-status">
-          <span class="dot"></span>
-          <span class="mono">All Heaters Online</span>
-        </div>
       </div>
     </div>
 
@@ -598,34 +601,60 @@
     state[h.id] = { top: (i * 2) % 4, bottom: (i * 3 + 1) % 4 };
   });
 
-  function buildSVG(hid) {
-    // Geometry mirrors Figma's pill-widget flex layout exactly:
-    // outer pill padding 4px, 68px-wide content column, 4px gap between all five stacked children.
-    const PAD = 4, GAP = 4;
-    const W = 76;
-    const bodyW = 68;
-    const bx = (W - bodyW) / 2;
-    const cx = W / 2;
+  // ---- Connectivity status: derived from how many heaters are offline ----
+  function renderConnectivityStatus() {
+    const offlineCount = HEATERS.filter((h) => h.offline).length;
+    const containerEl = document.getElementById('systemStatus');
+    const dotEl = document.getElementById('connectivityDot');
+    const textEl = document.getElementById('connectivityText');
+    if (offlineCount === 0) {
+      containerEl.classList.remove('offline');
+      dotEl.classList.remove('offline');
+      textEl.textContent = 'All Heaters Online';
+    } else {
+      containerEl.classList.add('offline');
+      dotEl.classList.add('offline');
+      textEl.textContent = offlineCount + ' Heater' + (offlineCount === 1 ? '' : 's') + ' Offline';
+    }
+  }
+  renderConnectivityStatus();
 
-    const topH = 48, ledH = 11, midH = 54, botH = 48;
+  function buildSVG(hid) {
+    // No outer pill wrapper: the SVG's own bodyW/height define the touch-target column directly,
+    // so the button shapes themselves read as one unit via matching width + generous internal gaps.
+    // STROKE_PAD keeps the 1.5px stroke from being clipped by the viewBox on the straight edges
+    // (the curved dome edges don't need it, but the flush vertical sides do).
+    const GAP = 8;
+    const STROKE_PAD = 1;
+    const bodyW = 68;
+    const W = bodyW + STROKE_PAD * 2;
+    const bx = STROKE_PAD;
+    const cx = bx + bodyW / 2;
+
+    const topH = 48, ledH = 14, midH = 54, botH = 48;
     const rOuter = 34, rInner = 8;
 
-    const topY = PAD;
+    const topY = 0;
     const topRowY = topY + topH + GAP + ledH / 2;
     const midY = topY + topH + GAP + ledH + GAP;
     const botRowY = midY + midH + GAP + ledH / 2;
     const botY = midY + midH + GAP + ledH + GAP;
-    const H = botY + botH + PAD;
+    const H = botY + botH;
 
-    const dotR = 3.5, dotGap = 15;
-    const groupW = dotGap * 2;
-    const gx0 = cx - groupW / 2;
-    const ledX = [gx0, gx0 + dotGap, gx0 + dotGap * 2];
+    // LED bar now spans the full button width, matching the top/center/bottom buttons.
+    const dotR = 5;
+    const ledMargin = 14;
+    const ledSpan = bodyW - ledMargin * 2;
+    const ledX = [bx + ledMargin, bx + ledMargin + ledSpan / 2, bx + ledMargin + ledSpan];
 
+    // Identity dots sit the same distance from each dome's flat edge (the edge facing its LED strip),
+    // so the purple (top) and orange (bottom) dots mirror each other visually instead of both being
+    // measured from a fixed top-left origin, which put the top dot noticeably higher than the bottom one.
     const idR = 2;
-    const topIdY = topY + topH * 0.46;
-    const botIdY = botY + botH * 0.46;
-    const midCx = cx, midCy = midY + midH / 2, midDotGap = 6;
+    const idInset = topH * 0.44;
+    const topIdY = (topY + topH) - idInset;
+    const botIdY = botY + idInset;
+    const midCx = cx, midCy = midY + midH / 2, midDotGap = 5;
 
     const domeCorner = 6; // slight rounding where the dome's straight sides meet its flat edge
     function topPath() {
@@ -663,7 +692,7 @@
         '<path class="flash" d="' + topPath() + '"/>' +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="top" tabindex="0" role="button" aria-label="Spot 2">' +
-        '<rect class="focusable hit-target" x="' + (ledX[0] - 8) + '" y="' + (topRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
+        '<rect class="focusable hit-target" x="' + bx + '" y="' + (topRowY - ledH / 2 - 4) + '" width="' + bodyW + '" height="' + (ledH + 8) + '" rx="' + (ledH / 2) + '" fill="transparent"/>' +
         ledRow("top", topRowY) +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="both" tabindex="0" role="button" aria-label="Both spots">' +
@@ -673,7 +702,7 @@
         '<rect class="flash" x="' + bx + '" y="' + midY + '" width="' + bodyW + '" height="' + midH + '" rx="' + rInner + '"/>' +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot level">' +
-        '<rect class="focusable hit-target" x="' + (ledX[0] - 8) + '" y="' + (botRowY - 8) + '" width="' + (groupW + 16) + '" height="16" rx="8" fill="transparent"/>' +
+        '<rect class="focusable hit-target" x="' + bx + '" y="' + (botRowY - ledH / 2 - 4) + '" width="' + bodyW + '" height="' + (ledH + 8) + '" rx="' + (ledH / 2) + '" fill="transparent"/>' +
         ledRow("bottom", botRowY) +
       '</g>' +
       '<g class="zone" data-heater="' + hid + '" data-target="bottom" tabindex="0" role="button" aria-label="Lower spot">' +
@@ -740,7 +769,7 @@
         const col = document.createElement('div');
         col.className = 'heater' + (h.offline ? ' offline' : '');
         col.innerHTML =
-          '<div class="pill-widget" id="heater-' + h.id + '">' +
+          '<div class="heater-unit" id="heater-' + h.id + '">' +
             buildSVG(h.id) +
             '<svg class="offline-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
               '<path d="M9.94026 4.27441C11.0677 4.59927 12.0954 5.20232 12.9289 6.02813C13.7623 6.85394 14.3749 7.87602 14.7102 9.00041H16.5001C17.2252 9.00042 17.9394 9.17562 18.5822 9.51109C19.2249 9.84656 19.7771 10.3324 20.1917 10.9272C20.6063 11.522 20.871 12.2081 20.9633 12.9272C21.0557 13.6464 20.9729 14.3772 20.7221 15.0574M17.7955 17.8103C17.3751 17.9365 16.9385 18.0005 16.4995 18.0003H7.99968C6.43068 18 4.90726 17.4726 3.67392 16.5027C2.44059 15.5328 1.56885 14.1767 1.19863 12.652C0.828416 11.1272 0.981182 9.52235 1.63241 8.09485C2.28364 6.66736 3.39557 5.50005 4.78974 4.78027M1 1L20.9996 21"/>' +
