@@ -152,7 +152,7 @@ body {
    phones a small fixed bottom offset lands too close to the browser chrome / gesture bar to
    comfortably notice. role="status" + aria-live is set in markup so screen readers announce it. */
 .toast {
-  position: fixed; bottom: 30vh; left: 50%; transform: translateX(-50%) translateY(20px);
+  position: fixed; bottom: 20vh; left: 50%; transform: translateX(-50%) translateY(20px);
   background: #1C1F2B; border: 1px solid #2D3244; border-radius: var(--radius-md);
   padding: var(--space-3) 18px;
   font-size: 13px; color: var(--title-dim); opacity: 0; pointer-events: none;
