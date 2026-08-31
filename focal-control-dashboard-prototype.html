@@ -52,9 +52,13 @@
     cursor: pointer; font: inherit; color: #fff;
     transition: border-color 0.15s ease, background 0.15s ease, transform 0.08s ease;
   }
-  .btn:hover { border-color: var(--btn-stroke-hover); background: var(--btn-fill-hover); }
   .btn:active { transform: scale(0.98); }
   .btn:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
+  /* Hover states are gated to devices with real hover capability (mouse/trackpad) — on touchscreens
+     there's no "unhover" event, so :hover would otherwise stay stuck lit after every tap. */
+  @media (hover: hover) {
+    .btn:hover { border-color: var(--btn-stroke-hover); background: var(--btn-fill-hover); }
+  }
 
   .schedule-btn {
     display: inline-flex; align-items: center; gap: 10px;
@@ -66,7 +70,9 @@
   .schedule-btn .dot.inactive { background: var(--led-off); box-shadow: none; }
   .schedule-btn .text { font-size: 14px; color: #E5E7EB; }
   .schedule-btn .pencil { width: 16px; height: 16px; opacity: 0.85; transition: opacity 0.15s ease; }
-  .schedule-btn:hover .pencil { opacity: 1; }
+  @media (hover: hover) {
+    .schedule-btn:hover .pencil { opacity: 1; }
+  }
   /* Connectivity dot stays red/green — the one place a health alert genuinely belongs. */
   .system-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #E5E7EB; }
   .system-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
@@ -109,7 +115,9 @@
     cursor: pointer; font-family: inherit;
     transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .map-zone-card:hover { border-color: #4d5a73; background: #171c2c; }
+  @media (hover: hover) {
+    .map-zone-card:hover { border-color: #4d5a73; background: #171c2c; }
+  }
   .map-zone-card:focus-visible { outline: 2px solid var(--btn-stroke-hover); outline-offset: 2px; }
   .map-zone-card .rail-labels {
     display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--sub);
@@ -199,7 +207,9 @@
   svg.pill-svg { display: block; touch-action: manipulation; width: 70px; height: auto; }
   .zone { cursor: pointer; outline: none; }
   .zone .focusable { transition: stroke 0.15s ease, fill 0.15s ease; }
-  .zone:hover .focusable:not(.hit-target) { stroke: var(--btn-stroke-hover); fill: var(--btn-fill-hover); }
+  @media (hover: hover) {
+    .zone:hover .focusable:not(.hit-target) { stroke: var(--btn-stroke-hover); fill: var(--btn-fill-hover); }
+  }
   .zone:focus-visible .focusable:not(.hit-target) { stroke: var(--btn-stroke-hover); stroke-width: 2.5; }
   .led { transition: fill 0.14s ease, filter 0.14s ease; }
   .led[fill="var(--led-on)"] { filter: drop-shadow(0 0 3px rgba(255,255,255,0.85)); }
