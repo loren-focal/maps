@@ -87,9 +87,35 @@
   .scroll-region.can-scroll-end .scroll-hint.right { opacity: 1; }
 
   .heaters-row-scroll { display: flex; gap: var(--space-8); flex-wrap: nowrap; overflow-x: auto; padding-bottom: var(--space-1); }
+
+  /* Add Rail: one at each end of the zone's rail row (left = "Add Rail to the Left", right =
+     "Add Rail to the Right"), edit-mode only. Matches the zone's real left-to-right physical order
+     — PRD §03 — rather than needing a separate top/bottom-of-list convention. Icon-only, same
+     footprint as the rotate/remove corner buttons (30px) rather than a full-height labeled column —
+     the accessible name still carries "left"/"right" via aria-label. */
+  .add-rail-btn {
+    display: none; flex: none; align-items: center; justify-content: center;
+    align-self: center;
+    width: 30px; height: 30px; padding: 0; border-radius: var(--radius-sm);
+    border: 1px solid transparent; background: var(--edit-accent-fill);
+    color: var(--edit-accent);
+  }
+  .add-rail-btn svg { width: 15px; height: 15px; flex: none; }
+  body.tech-mode .add-rail-btn { display: flex; }
+  @media (hover: hover) {
+    .add-rail-btn:hover { border-color: var(--edit-accent); }
+  }
+
   .heater-group {
     display: flex; flex-direction: column; align-items: center; gap: var(--space-3); flex: none;
     padding: var(--space-3) var(--space-2) var(--space-3);
+  }
+  /* Stacked (90°/270°) rails right-align their overflow menus against the heater column's edge
+     (see .heater[data-rail-rotation] rule below) — the default 8px side padding reads as jammed
+     against the card edge once that column fills the card's width, so give it more room here. */
+  .heater-group:has(.rail-heaters[data-rail-rotation="90"]),
+  .heater-group:has(.rail-heaters[data-rail-rotation="270"]) {
+    padding-left: var(--space-4); padding-right: var(--space-4);
   }
   /* Rail label and rotate/remove controls are rail-group chrome, not part of the physical unit —
      they stay screen-fixed regardless of the rail's rotation (Rail Editing PRD §02). Rotate sits
@@ -105,7 +131,13 @@
     letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub);
     text-align: center; white-space: nowrap;
   }
+  /* A rotated rail's long axis is vertical, not horizontal — 90°/270° stack the heaters top-to-
+     bottom instead of laying them left-to-right, matching the real physical mount (PRD §02). */
   .heater-group .rail-heaters { display: flex; gap: 0px; }
+  .heater-group .rail-heaters[data-rail-rotation="90"],
+  .heater-group .rail-heaters[data-rail-rotation="270"] {
+    flex-direction: column; align-items: center; gap: var(--space-4);
+  }
 
   /* Rotate (top-left) and remove (top-right, delete icon): edit-mode only, same small icon-button
      footprint so the two corners read as a matched pair. Both use --edit-accent (not --sub) so
@@ -121,6 +153,9 @@
   .rotate-btn svg, .rail-remove-btn svg { width: 17px; height: 17px; }
   .rotate-btn { left: 0; }
   .rail-remove-btn { right: 0; }
+  /* Overrides .btn:active's shared scale-down + inset-shadow "pressed" look — a plain, un-dramatic
+     press for a destructive action reads calmer than the bouncy default. */
+  .rotate-btn:active, .rail-remove-btn:active { transform: translateY(-50%); box-shadow: none; }
   body.tech-mode .rotate-btn,
   body.tech-mode .rail-remove-btn { display: flex; }
   @media (hover: hover) {
@@ -143,34 +178,54 @@
   .heater[data-rail-rotation="270"] .heater-unit {
     width: 212px; height: 70px;
   }
-
-  /* Power/lightning icon: one per rail (a rail has a single physical power connection, not one
-     per heater), shown once at the rail-facing end of the rail's heater row. Edit-mode only.
-     Deliberately un-button-like — no box, no fill, no hover state, sized smaller than the actual
-     controls above — this is a status glyph, not something tappable.
-     Height matches .heater-unit exactly (not the taller .heater column, which also includes the
-     overflow button below) and centers its content within that box, so the icon lines up with the
-     pill's own middle button row — not the rail card's overall vertical center. .heater-unit's
-     height flips 212px/70px with rotation (see .heater[data-rail-rotation] rule above), so this
-     tracks that swap via the sibling attribute selector instead of a fixed value. */
-  .rail-power-icon {
-    display: none; align-items: center; justify-content: center; flex: none;
-    align-self: flex-start;
-    width: 18px; height: 212px; color: var(--sub); pointer-events: none;
-  }
-  .heater[data-rail-rotation="90"] ~ .rail-power-icon,
-  .heater[data-rail-rotation="270"] ~ .rail-power-icon {
-    height: 70px;
-  }
-  .rail-power-icon svg { width: 12px; height: 12px; }
-  body.tech-mode .rail-power-icon { display: flex; }
-
-  /* Overflow menu only ever needs two on-screen positions: below the card when the rail reads
-     horizontally (0°/180°), or to its side when the rail reads vertically (90°/270°) — see PRD §02. */
+  /* Stacked (90°/270°) heaters read as a wide row (Spot 1 · middle · Spot 2), so the overflow menu
+     sits inline right after that row — not below it, right-aligned into a detached column. Each
+     heater becomes a flex row (heater-unit beside its own overflow button) instead of a column. */
   .heater[data-rail-rotation="90"],
   .heater[data-rail-rotation="270"] {
-    flex-direction: row; gap: var(--space-2); width: auto;
+    flex-direction: row; gap: var(--space-3); width: auto;
   }
+
+  /* Power/lightning icon: one per rail (a rail has a single physical power connection, not one
+     per heater), shown once at whichever end of the rail the connection physically sits. Edit-mode
+     only. Deliberately un-button-like — no box, no fill, no hover state — a status glyph, not
+     something tappable.
+     The connection point is a fixed point on the physical rail, so as the rail rotates clockwise
+     that point sweeps clockwise around the rail's silhouette: 0°=right, 90°=bottom, 180°=left,
+     270°=top. DOM order alone can't express "bottom" vs "top" (both are just "last child" once the
+     row becomes a column), so buildRailGroup() below inserts the icon at the start or end of
+     .rail-heaters as appropriate, and this block only handles sizing/icon-rotation per state. */
+  .rail-power-icon {
+    display: none; align-items: center; justify-content: center; flex: none;
+    color: var(--sub); pointer-events: none;
+  }
+  /* 0°/180°: rail reads horizontally, icon sits at the row's end and matches the pill's own height. */
+  .rail-heaters:not([data-rail-rotation="90"]):not([data-rail-rotation="270"]) .rail-power-icon {
+    align-self: flex-start; width: 26px; height: 212px;
+  }
+  /* 90°/270°: rail reads vertically (stacked heaters, see .rail-heaters[data-rail-rotation] above),
+     so the icon spans the pill's width instead of its height, and sits above/below the stack.
+     Width matches .heater-unit's own 212px (not the wider row that also includes each heater's
+     inline overflow menu) and align-self: flex-start keeps it left-edge-aligned with the heater
+     units above/below it — centering against the full row would skew it toward the menu side. */
+  .rail-heaters[data-rail-rotation="90"] .rail-power-icon,
+  .rail-heaters[data-rail-rotation="270"] .rail-power-icon {
+    align-self: flex-start; width: 212px; height: 26px;
+  }
+  /* Icon glyph itself rotates to keep visually pointing "into" the rail from wherever it now sits.
+     RAIL_POWER_SVG's default shape points its cord straight down (prongs up). Rotating a downward
+     vector clockwise by θ: 0°→down, 90°→left, 180°→up, 270°→right. From that:
+     0°  → icon on the right edge, rail body to its left  → cord must point left  → rotate 90°
+     90° → icon at the bottom, rail body above it          → cord must point up    → rotate 180°
+     180°→ icon on the left edge, rail body to its right  → cord must point right → rotate 270°
+     270°→ icon at the top, rail body below it             → cord must point down  → rotate 0° (default) */
+  .rail-power-icon svg { width: 20px; height: 20px; }
+  .rail-heaters[data-rail-rotation="0"] .rail-power-icon svg,
+  .rail-heaters:not([data-rail-rotation]) .rail-power-icon svg { transform: rotate(90deg); }
+  .rail-heaters[data-rail-rotation="90"] .rail-power-icon svg { transform: rotate(180deg); }
+  .rail-heaters[data-rail-rotation="180"] .rail-power-icon svg { transform: rotate(270deg); }
+  .rail-heaters[data-rail-rotation="270"] .rail-power-icon svg { transform: rotate(0deg); }
+  body.tech-mode .rail-power-icon { display: flex; }
 
   .heater { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); width: 80px; }
   /* Dim only the pill graphic, not the whole unit — the offline icon (below) stays at full opacity,
@@ -512,6 +567,24 @@
         </button>
       </div>
       <button class="btn cancel-btn" id="overflowCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Add Rail modal: choose slot count, per PRD §03 (fixed at creation, matches real hardware) -->
+  <div class="modal-scrim" id="addRailModalScrim">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addRailModalTitle">
+      <div class="sheet-header">
+        <div>
+          <div class="title" id="addRailModalTitle">Add Rail</div>
+          <div class="subtitle mono">Choose Slot Count</div>
+        </div>
+      </div>
+      <div class="options-stack" id="addRailOptions">
+        <button class="btn option-row" data-slot-count="1" type="button"><span class="label">1 slot</span></button>
+        <button class="btn option-row" data-slot-count="2" type="button"><span class="label">2 slots</span></button>
+        <button class="btn option-row" data-slot-count="3" type="button"><span class="label">3 slots</span></button>
+      </div>
+      <button class="btn cancel-btn" id="addRailCancelBtn" type="button">Cancel</button>
     </div>
   </div>
 
@@ -865,12 +938,12 @@
     '<svg class="offline-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" role="img" aria-label="Offline">' +
       '<path d="M9.94026 4.27441C11.0677 4.59927 12.0954 5.20232 12.9289 6.02813C13.7623 6.85394 14.3749 7.87602 14.7102 9.00041H16.5001C17.2252 9.00042 17.9394 9.17562 18.5822 9.51109C19.2249 9.84656 19.7771 10.3324 20.1917 10.9272C20.6063 11.522 20.871 12.2081 20.9633 12.9272C21.0557 13.6464 20.9729 14.3772 20.7221 15.0574M17.7955 17.8103C17.3751 17.9365 16.9385 18.0005 16.4995 18.0003H7.99968C6.43068 18 4.90726 17.4726 3.67392 16.5027C2.44059 15.5328 1.56885 14.1767 1.19863 12.652C0.828416 11.1272 0.981182 9.52235 1.63241 8.09485C2.28364 6.66736 3.39557 5.50005 4.78974 4.78027M1 1L20.9996 21"/>' +
     '</svg>';
-  // One lightning-bolt icon represents the rail's single physical power connection — a rail is
-  // wired as one unit, not one connection per heater (see PRD polish notes), so this renders once
-  // per rail (appended into .rail-heaters below), not per heater card.
+  // One plug icon represents the rail's single physical power connection — a rail is wired as one
+  // unit, not one connection per heater (see PRD polish notes), so this renders once per rail
+  // (appended into .rail-heaters below), not per heater card.
   const RAIL_POWER_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' +
+      '<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8Z"/><path d="M12 17v5"/>' +
     '</svg>';
   // Bold filled clockwise-rotate glyph (thick arc + solid arrowhead), matching the reference icon's
   // weight rather than a thin stroked outline — reads clearly at the button's small size.
@@ -919,6 +992,7 @@
       '</div>' +
       '<div class="rail-heaters" data-group></div>';
     const heatersEl = group.querySelector('[data-group]');
+    heatersEl.setAttribute('data-rail-rotation', String(rail.rotation));
     rail.slots.forEach((s) => {
       if (!s.heaterSerial) return;
       const h = { id: s.heaterSerial, zone: rail.zone, rail: rail.order, serial: s.heaterSerial, offline: !!s.offline };
@@ -928,8 +1002,46 @@
     powerIcon.className = 'rail-power-icon';
     powerIcon.setAttribute('aria-hidden', 'true');
     powerIcon.innerHTML = RAIL_POWER_SVG;
-    heatersEl.appendChild(powerIcon);
+    // The power connection is a fixed point on the physical rail that sweeps clockwise as the rail
+    // rotates: 0°=right (row end), 90°=bottom (column end), 180°=left (row start), 270°=top (column
+    // start) — see the CSS comment above buildRailGroup's power-icon rules for the full mapping.
+    if (rail.rotation === 180 || rail.rotation === 270) {
+      heatersEl.insertBefore(powerIcon, heatersEl.firstChild);
+    } else {
+      heatersEl.appendChild(powerIcon);
+    }
     return group;
+  }
+
+  const ADD_LEFT_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+
+  function buildAddRailButton(zoneNum, side) {
+    const btn = document.createElement('button');
+    btn.className = 'btn add-rail-btn';
+    btn.type = 'button';
+    btn.setAttribute('data-add-rail-zone', String(zoneNum));
+    btn.setAttribute('data-add-rail-side', side);
+    btn.setAttribute('aria-label', 'Add Rail to the ' + (side === 'left' ? 'Left' : 'Right') + ' of Zone ' + zoneNum);
+    btn.innerHTML = ADD_LEFT_SVG;
+    return btn;
+  }
+
+  function renderZoneMapLabels() {
+    [1, 2].forEach((zoneNum) => {
+      const card = document.querySelector('.map-zone-card[data-jump="' + zoneNum + '"]');
+      if (!card) return;
+      const rails = RAILS.filter((r) => r.zone === zoneNum).sort((a, b) => a.order - b.order);
+      const numbers = rails.map((r) => railLabelNumber(r));
+      const labelsEl = card.querySelector('.rail-labels');
+      labelsEl.innerHTML = numbers.map((n) => '<span>Rail ' + n + '</span>').join('<span class="sep">&middot;</span>');
+      const namesForAria = numbers.length <= 1
+        ? 'Rail ' + numbers[0]
+        : numbers.length === 2
+          ? 'Rail ' + numbers[0] + ' and Rail ' + numbers[1]
+          : numbers.slice(0, -1).map((n) => 'Rail ' + n).join(', ') + ', and Rail ' + numbers[numbers.length - 1];
+      card.setAttribute('aria-label', 'Zone ' + zoneNum + ', ' + namesForAria + ' — jump to Zone ' + zoneNum);
+    });
   }
 
   function renderRailGroups() {
@@ -937,10 +1049,13 @@
       const container = document.querySelector('[data-zone-rails="' + zoneNum + '"]');
       if (!container) return;
       container.innerHTML = '';
+      container.appendChild(buildAddRailButton(zoneNum, 'left'));
       RAILS.filter((r) => r.zone === zoneNum).sort((a, b) => a.order - b.order).forEach((rail) => {
         container.appendChild(buildRailGroup(rail));
       });
+      container.appendChild(buildAddRailButton(zoneNum, 'right'));
     });
+    renderZoneMapLabels();
     // applyTechModeUI toggles [hidden] on .tech-only elements — rebuilding the DOM above re-adds
     // fresh .rail-remove-btn nodes that start hidden, so re-apply the current mode's visibility.
     applyTechModeUI();
@@ -955,8 +1070,67 @@
         rail.rotation = nextRotation(rail.rotation);
         renderRailGroups();
       }
+      return;
+    }
+    const removeBtn = e.target.closest('[data-remove-rail]');
+    if (removeBtn) {
+      const rail = RAILS.find((r) => r.id === removeBtn.getAttribute('data-remove-rail'));
+      if (!rail) return;
+      const occupied = rail.slots.some((s) => !!s.heaterSerial);
+      if (occupied) {
+        showToast('Heaters must be removed before removing rail');
+        return;
+      }
+      if (!window.confirm('Remove Rail ' + railLabelNumber(rail) + '? This cannot be undone.')) return;
+      const idx = RAILS.indexOf(rail);
+      RAILS.splice(idx, 1);
+      // Close up the order sequence within the rail's zone so later rails shift down by one,
+      // keeping "order" contiguous (0..n-1) — buildAddRailButton/insertion logic below assumes this.
+      RAILS.filter((r) => r.zone === rail.zone && r.order > rail.order).forEach((r) => { r.order -= 1; });
+      renderRailGroups();
+      return;
+    }
+    const addBtn = e.target.closest('[data-add-rail-zone]');
+    if (addBtn) {
+      openAddRailModal(Number(addBtn.getAttribute('data-add-rail-zone')), addBtn.getAttribute('data-add-rail-side'), addBtn);
     }
   });
+
+  // ---- Add Rail modal: pick slot count (2 or 3), fixed for the rail's lifetime per PRD §03 ----
+  const addRailScrim = document.getElementById('addRailModalScrim');
+  const addRailOptions = document.getElementById('addRailOptions');
+  let pendingAddRail = null; // { zoneNum, side }
+
+  function openAddRailModal(zoneNum, side, triggerEl) {
+    pendingAddRail = { zoneNum, side };
+    openModal(addRailScrim, triggerEl);
+  }
+  function closeAddRailModal() {
+    closeModal(addRailScrim);
+    pendingAddRail = null;
+  }
+  addRailOptions.addEventListener('click', (e) => {
+    const row = e.target.closest('[data-slot-count]');
+    if (!row || !pendingAddRail) return;
+    const slotCount = Number(row.getAttribute('data-slot-count'));
+    const { zoneNum, side } = pendingAddRail;
+    const zoneRails = RAILS.filter((r) => r.zone === zoneNum);
+    const insertOrder = side === 'left' ? 0 : zoneRails.length;
+    if (side === 'left') {
+      zoneRails.forEach((r) => { r.order += 1; });
+    }
+    const newRail = {
+      id: 'R' + (Math.max(0, ...RAILS.map((r) => Number(r.id.slice(1)))) + 1),
+      zone: zoneNum, order: insertOrder, slotCount, rotation: 0,
+      slots: Array.from({ length: slotCount }, (_, i) => ({ index: i, pitch: null, roll: null, heaterSerial: null })),
+    };
+    RAILS.push(newRail);
+    closeAddRailModal();
+    renderRailGroups();
+    showToast('Added a ' + slotCount + '-slot rail to the ' + side + ' of Zone ' + zoneNum);
+  });
+  document.getElementById('addRailCancelBtn').addEventListener('click', closeAddRailModal);
+  addRailScrim.addEventListener('click', (e) => { if (e.target === addRailScrim) closeAddRailModal(); });
 
   renderRailGroups();
 
@@ -1141,6 +1315,7 @@
     if (e.key !== 'Escape') return;
     if (levelScrim.classList.contains('open')) closeLevelModal();
     if (overflowScrim.classList.contains('open')) closeOverflowModal();
+    if (addRailScrim.classList.contains('open')) closeAddRailModal();
   });
 })();
 </script>
