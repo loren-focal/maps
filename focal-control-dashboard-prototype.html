@@ -108,12 +108,15 @@
   .heater-group .rail-heaters { display: flex; gap: 0px; }
 
   /* Rotate (top-left) and remove (top-right, delete icon): edit-mode only, same small icon-button
-     footprint so the two corners read as a matched pair. */
+     footprint so the two corners read as a matched pair. Both use --edit-accent (not --sub) so
+     every edit-only control reads as part of one "you're in Edit Layout mode" visual language —
+     see the Done Editing toggle and heater overflow button below for the same treatment. */
   .rotate-btn, .rail-remove-btn {
     display: none; align-items: center; justify-content: center;
     position: absolute; top: 50%; transform: translateY(-50%);
     width: 22px; height: 22px; padding: 0; border-radius: var(--radius-sm);
-    background: none; border: none; box-shadow: none; color: var(--sub);
+    background: var(--edit-accent-fill); border: 1px solid transparent; box-shadow: none;
+    color: var(--edit-accent);
   }
   .rotate-btn svg, .rail-remove-btn svg { width: 13px; height: 13px; }
   .rotate-btn { left: 0; }
@@ -121,8 +124,7 @@
   body.tech-mode .rotate-btn,
   body.tech-mode .rail-remove-btn { display: flex; }
   @media (hover: hover) {
-    .rotate-btn:hover { color: var(--title-dim); background: rgba(255,255,255,0.06); }
-    .rail-remove-btn:hover { color: var(--danger); background: rgba(255,255,255,0.06); }
+    .rotate-btn:hover, .rail-remove-btn:hover { border-color: var(--edit-accent); }
   }
 
   /* The heater card's own graphic (SVG) rotates in 90° steps to reflect real physical mounting;
@@ -143,12 +145,14 @@
   }
 
   /* Power/lightning icon: one per rail (a rail has a single physical power connection, not one
-     per heater), shown once at the rail-facing end of the rail's heater row. Edit-mode only. */
+     per heater), shown once at the rail-facing end of the rail's heater row. Edit-mode only.
+     Deliberately un-button-like — no box, no fill, no hover state, sized smaller than the actual
+     controls above — this is a status glyph, not something tappable. */
   .rail-power-icon {
     display: none; align-items: center; justify-content: center; flex: none;
-    width: 22px; height: 22px; color: var(--sub);
+    width: 18px; color: var(--sub); pointer-events: none;
   }
-  .rail-power-icon svg { width: 15px; height: 15px; }
+  .rail-power-icon svg { width: 12px; height: 12px; }
   body.tech-mode .rail-power-icon { display: flex; }
 
   /* Overflow menu only ever needs two on-screen positions: below the card when the rail reads
@@ -214,6 +218,27 @@
   @media (hover: hover) {
     .overflow-btn:hover { background: rgba(255,255,255,0.06); }
     .overflow-btn:hover svg rect { fill: var(--title-dim); }
+  }
+  /* In Edit Layout mode the overflow menu holds more (destructive) actions than the everyday
+     Identify-only menu, so it picks up the same --edit-accent language as the rest of the edit
+     controls — a visible cue that this button now does more than it does day-to-day. */
+  body.tech-mode .overflow-btn { background: var(--edit-accent-fill); }
+  body.tech-mode .overflow-btn svg rect { fill: var(--edit-accent); }
+  @media (hover: hover) {
+    body.tech-mode .overflow-btn:hover { background: color-mix(in srgb, var(--edit-accent-fill) 160%, transparent); }
+  }
+
+  /* Done Editing: same amber language as every other edit-only control, so the toggle itself
+     signals the mode it just turned on, not just a plain text link like Support/Edit Schedule.
+     #id beats .text-btn:hover's specificity, but the hover variant still needs writing out
+     explicitly — otherwise hover would just fall through to .text-btn:hover's plain white. */
+  #techModeBtn[aria-pressed="true"] {
+    color: var(--edit-accent); text-decoration-color: var(--edit-accent);
+  }
+  @media (hover: hover) {
+    #techModeBtn[aria-pressed="true"]:hover {
+      color: var(--edit-accent); text-decoration-color: var(--edit-accent);
+    }
   }
   .overflow-btn svg { width: 16px; height: 12px; }
   .overflow-btn svg rect { fill: var(--sub); transition: fill 0.15s ease; }

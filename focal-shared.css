@@ -32,6 +32,10 @@
   --led-off: #4C5568;
   --danger: #F87171;
   --accent: #10B981;             /* reserved: not currently used by any component */
+  --edit-accent: #F5C542;        /* technician Edit Layout mode: marks every edit-only control (Done
+                                     Editing, rotate, remove rail, heater overflow menu) so the mode
+                                     itself reads at a glance, distinct from --danger/--accent */
+  --edit-accent-fill: rgba(245, 197, 66, 0.14);
 
   /* ---- Color: heater identity ---- */
   --purple: #A78BFA;             /* "Spot 1" identity color */
