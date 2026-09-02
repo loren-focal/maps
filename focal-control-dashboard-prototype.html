@@ -293,6 +293,24 @@
     body.tech-mode .overflow-btn:hover { background: color-mix(in srgb, var(--edit-accent-fill) 160%, transparent); }
   }
 
+  /* Empty slot: a slot with no heater still occupies its place in the rail (its pitch/roll
+     calibration persists — PRD §01), so it's shown as a visible outlined placeholder, not just
+     absent from the row, with a plain "+" to assign a heater. Edit-mode only. */
+  .empty-slot-unit { position: relative; }
+  .empty-slot-outline { color: var(--btn-stroke); width: 70px; height: auto; display: block; }
+  /* Matches .add-rail-btn exactly — same footprint/fill/border language as every other "+" affordance. */
+  .empty-slot-add {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 30px; height: 30px; padding: 0; border-radius: var(--radius-sm);
+    border: 1px solid transparent; background: var(--edit-accent-fill); color: var(--edit-accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-slot-add svg { width: 15px; height: 15px; }
+  .empty-slot-add:active { transform: translate(-50%, -50%); box-shadow: none; }
+  @media (hover: hover) {
+    .empty-slot-add:hover { border-color: var(--edit-accent); }
+  }
+
   /* Done Editing: same amber language as every other edit-only control, so the toggle itself
      signals the mode it just turned on, not just a plain text link like Support/Edit Schedule.
      #id beats .text-btn:hover's specificity, but the hover variant still needs writing out
@@ -367,8 +385,22 @@
   .option-row.active .label { color: #fff; font-weight: 700; }
   .option-row.active .label::after { content: ""; width: 4px; height: 4px; border-radius: var(--radius-full); background: #fff; }
 
+  /* QR scanner (Assign Heater modal) — dark-theme port of fixit.html's camera view. */
+  .qr-scanner-video {
+    display: block; width: 100%; aspect-ratio: 1; object-fit: cover; object-position: center;
+    border-radius: var(--radius-md); background: #000;
+  }
+  .qr-scanner-status { font-size: 13px; color: var(--sub); text-align: center; margin: 0; }
+
   .cancel-btn {
     text-align: center; padding: var(--space-3); font-weight: 600; text-transform: uppercase;
+  }
+  .confirm-btn {
+    text-align: center; padding: var(--space-3); font-weight: 600; text-transform: uppercase;
+  }
+  .confirm-btn.danger { color: var(--danger); }
+  @media (hover: hover) {
+    .confirm-btn.danger:hover { border-color: var(--danger); }
   }
 
   /* Overflow action menu */
@@ -588,6 +620,55 @@
     </div>
   </div>
 
+  <!-- Assign Heater modal: QR-scan only, per PRD §04 — used for both a fresh Add and Swap's
+       add-half. No manual serial entry field: camera scan (BarcodeDetector) is the only accepted
+       input, falling back to a plain status message when scanning isn't supported/available,
+       matching the pattern in fixit.html. -->
+  <div class="modal-scrim" id="assignHeaterModalScrim">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="assignHeaterModalTitle">
+      <div class="sheet-header">
+        <div>
+          <div class="title" id="assignHeaterModalTitle">Scan Heater QR Code</div>
+          <div class="subtitle mono" id="assignHeaterModalSubtitle">Rail 1 &middot; Slot 1</div>
+        </div>
+      </div>
+      <video id="assignHeaterVideo" class="qr-scanner-video" playsinline muted></video>
+      <p class="qr-scanner-status" id="assignHeaterStatus">Point the camera at the heater's QR code.</p>
+      <button class="btn cancel-btn" id="assignHeaterCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Remove Heater confirmation: replaces window.confirm() with a themed modal — red Confirm,
+       plain white Cancel. Opened after closing the overflow sheet, not stacked on top of it. -->
+  <div class="modal-scrim" id="removeHeaterModalScrim">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="removeHeaterModalTitle">
+      <div class="sheet-header">
+        <div>
+          <div class="title title-sm" id="removeHeaterModalTitle">Remove Heater?</div>
+          <div class="subtitle mono" id="removeHeaterModalSubtitle"></div>
+        </div>
+      </div>
+      <p class="qr-scanner-status" id="removeHeaterModalBody">This slot's pitch/roll settings will remain.</p>
+      <button class="btn confirm-btn danger" id="removeHeaterConfirmBtn" type="button">Confirm</button>
+      <button class="btn cancel-btn" id="removeHeaterCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Remove Rail confirmation: same themed pattern as Remove Heater — red Confirm, white Cancel. -->
+  <div class="modal-scrim" id="removeRailModalScrim">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="removeRailModalTitle">
+      <div class="sheet-header">
+        <div>
+          <div class="title title-sm" id="removeRailModalTitle">Remove Rail?</div>
+          <div class="subtitle mono" id="removeRailModalSubtitle"></div>
+        </div>
+      </div>
+      <p class="qr-scanner-status" id="removeRailModalBody">This cannot be undone.</p>
+      <button class="btn confirm-btn danger" id="removeRailConfirmBtn" type="button">Confirm</button>
+      <button class="btn cancel-btn" id="removeRailCancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="focal-shared.js"></script>
@@ -745,12 +826,22 @@
     });
     return out;
   }
-  const HEATERS = allHeaters();
+  let HEATERS = allHeaters();
 
   const state = {};
   HEATERS.forEach((h) => {
     state[h.id] = { top: 0, bottom: 0 };
   });
+
+  // Re-derives HEATERS from RAILS after an assign/swap/remove changes which serials are occupied.
+  // Existing heaters keep their live level state; a newly-assigned serial starts at Off/Off, same
+  // as a fresh page load — a prototype has no real hardware to query for its actual current level.
+  function refreshHeaters() {
+    HEATERS = allHeaters();
+    HEATERS.forEach((h) => {
+      if (!state[h.id]) state[h.id] = { top: 0, bottom: 0 };
+    });
+  }
 
   // ---- Connectivity status: derived from how many heaters are offline ----
   // Status text is always plain; the "Troubleshoot" text-link only exists (shown, and only then given an
@@ -980,6 +1071,31 @@
     return col;
   }
 
+  const PLUS_ICON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+
+  // Empty slot: visibly present (an outlined placeholder, not just absent) with a "+" that opens
+  // the QR-scan Assign Heater modal. Visible regardless of Edit Layout mode (not tech-only) — a
+  // technician doing first-install assignment (layout already created, just walking through
+  // assigning physical heaters to already-existing empty slots) shouldn't need to enter the rarer
+  // layout-editing mode just to add a heater. Edit Layout stays for rotate/add-remove-rail/swap/
+  // calibration — the less common "change the layout itself" work.
+  function buildEmptySlotCol(rail, slotIndex) {
+    const col = document.createElement('div');
+    col.className = 'heater empty-slot';
+    col.setAttribute('data-rail-rotation', String(rail.rotation));
+    col.innerHTML =
+      '<div class="heater-unit empty-slot-unit">' +
+        '<div class="heater-rotate" data-rotation="' + rail.rotation + '">' +
+          '<svg class="pill-svg empty-slot-outline" viewBox="0 0 70 212" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4">' +
+            '<rect x="1" y="1" width="68" height="210" rx="34"/>' +
+          '</svg>' +
+        '</div>' +
+        '<button class="btn empty-slot-add" data-add-heater-rail="' + rail.id + '" data-add-heater-slot="' + slotIndex + '" type="button" aria-label="Add heater to Rail ' + railLabelNumber(rail) + ' slot ' + (slotIndex + 1) + '">' + PLUS_ICON_SVG + '</button>' +
+      '</div>';
+    return col;
+  }
+
   function buildRailGroup(rail) {
     const group = document.createElement('div');
     group.className = 'heater-group shelf-card';
@@ -994,7 +1110,10 @@
     const heatersEl = group.querySelector('[data-group]');
     heatersEl.setAttribute('data-rail-rotation', String(rail.rotation));
     rail.slots.forEach((s) => {
-      if (!s.heaterSerial) return;
+      if (!s.heaterSerial) {
+        heatersEl.appendChild(buildEmptySlotCol(rail, s.index));
+        return;
+      }
       const h = { id: s.heaterSerial, zone: rail.zone, rail: rail.order, serial: s.heaterSerial, offline: !!s.offline };
       heatersEl.appendChild(buildHeaterCol(h, rail));
     });
@@ -1013,9 +1132,6 @@
     return group;
   }
 
-  const ADD_LEFT_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-
   function buildAddRailButton(zoneNum, side) {
     const btn = document.createElement('button');
     btn.className = 'btn add-rail-btn';
@@ -1023,7 +1139,7 @@
     btn.setAttribute('data-add-rail-zone', String(zoneNum));
     btn.setAttribute('data-add-rail-side', side);
     btn.setAttribute('aria-label', 'Add Rail to the ' + (side === 'left' ? 'Left' : 'Right') + ' of Zone ' + zoneNum);
-    btn.innerHTML = ADD_LEFT_SVG;
+    btn.innerHTML = PLUS_ICON_SVG;
     return btn;
   }
 
@@ -1045,6 +1161,11 @@
   }
 
   function renderRailGroups() {
+    // Must run before any DOM building below — buildRailGroup()/buildHeaterCol()/buildSVG() read
+    // state[hid] for whichever serials are now occupying slots, and a serial that was just assigned
+    // (add/swap) has no state[] entry until refreshHeaters() creates one. Building first would throw
+    // reading state[newSerial].top for the just-added heater.
+    refreshHeaters();
     [1, 2].forEach((zoneNum) => {
       const container = document.querySelector('[data-zone-rails="' + zoneNum + '"]');
       if (!container) return;
@@ -1057,12 +1178,20 @@
     });
     renderZoneMapLabels();
     // applyTechModeUI toggles [hidden] on .tech-only elements — rebuilding the DOM above re-adds
-    // fresh .rail-remove-btn nodes that start hidden, so re-apply the current mode's visibility.
+    // fresh .rail-remove-btn/.empty-slot nodes that start hidden, so re-apply current visibility.
     applyTechModeUI();
+    renderConnectivityStatus();
     HEATERS.forEach((h) => render(h.id));
   }
 
   document.addEventListener('click', (e) => {
+    const addHeaterBtn = e.target.closest('[data-add-heater-rail]');
+    if (addHeaterBtn) {
+      const rail = RAILS.find((r) => r.id === addHeaterBtn.getAttribute('data-add-heater-rail'));
+      const slotIndex = Number(addHeaterBtn.getAttribute('data-add-heater-slot'));
+      if (rail) openAssignHeaterModal(rail, slotIndex, addHeaterBtn);
+      return;
+    }
     const rotateBtn = e.target.closest('[data-rotate-rail]');
     if (rotateBtn) {
       const rail = RAILS.find((r) => r.id === rotateBtn.getAttribute('data-rotate-rail'));
@@ -1081,13 +1210,7 @@
         showToast('Heaters must be removed before removing rail');
         return;
       }
-      if (!window.confirm('Remove Rail ' + railLabelNumber(rail) + '? This cannot be undone.')) return;
-      const idx = RAILS.indexOf(rail);
-      RAILS.splice(idx, 1);
-      // Close up the order sequence within the rail's zone so later rails shift down by one,
-      // keeping "order" contiguous (0..n-1) — buildAddRailButton/insertion logic below assumes this.
-      RAILS.filter((r) => r.zone === rail.zone && r.order > rail.order).forEach((r) => { r.order -= 1; });
-      renderRailGroups();
+      openRemoveRailModal(rail);
       return;
     }
     const addBtn = e.target.closest('[data-add-rail-zone]');
@@ -1131,6 +1254,141 @@
   });
   document.getElementById('addRailCancelBtn').addEventListener('click', closeAddRailModal);
   addRailScrim.addEventListener('click', (e) => { if (e.target === addRailScrim) closeAddRailModal(); });
+
+  // ---- Assign Heater modal: QR-scan only (PRD §04) — used for a fresh Add and for Swap's add-half ----
+  const assignHeaterScrim = document.getElementById('assignHeaterModalScrim');
+  const assignHeaterSubtitle = document.getElementById('assignHeaterModalSubtitle');
+  const assignHeaterVideo = document.getElementById('assignHeaterVideo');
+  const assignHeaterStatus = document.getElementById('assignHeaterStatus');
+  let pendingAssign = null; // { rail, slotIndex }
+  let qrStream = null;
+  let qrStopped = true;
+
+  function assignHeaterToSlot(serial) {
+    if (!pendingAssign) return;
+    const { rail, slotIndex } = pendingAssign;
+    const slot = rail.slots.find((s) => s.index === slotIndex);
+    if (!slot) return;
+    slot.heaterSerial = serial;
+    closeAssignHeaterModal();
+    renderRailGroups();
+    showToast('Assigned ' + serial + ' to Rail ' + railLabelNumber(rail) + ' slot ' + (slotIndex + 1));
+  }
+
+  function stopQrScan() {
+    qrStopped = true;
+    if (qrStream) {
+      qrStream.getTracks().forEach((track) => track.stop());
+      qrStream = null;
+    }
+    assignHeaterVideo.srcObject = null;
+  }
+
+  function startQrScan() {
+    if (!('BarcodeDetector' in window)) {
+      assignHeaterStatus.textContent = "Scanning isn't supported in this browser.";
+      return;
+    }
+    assignHeaterStatus.textContent = "Point the camera at the heater's QR code.";
+    qrStopped = false;
+    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+      .catch(() => navigator.mediaDevices.getUserMedia({ video: true }))
+      .then((stream) => {
+        qrStream = stream;
+        assignHeaterVideo.srcObject = stream;
+        return assignHeaterVideo.play();
+      })
+      .then(scanLoop)
+      .catch((err) => {
+        assignHeaterStatus.textContent = err && err.name === 'NotAllowedError'
+          ? 'Camera access was blocked. Allow camera access in your browser settings to scan.'
+          : "Couldn't access the camera.";
+      });
+
+    function scanLoop() {
+      if (qrStopped) return;
+      detector.detect(assignHeaterVideo).then((codes) => {
+        if (qrStopped) return;
+        if (codes.length > 0) {
+          const value = codes[0].rawValue;
+          stopQrScan();
+          assignHeaterToSlot(value);
+          return;
+        }
+        requestAnimationFrame(scanLoop);
+      }).catch(() => {
+        requestAnimationFrame(scanLoop);
+      });
+    }
+  }
+
+  function openAssignHeaterModal(rail, slotIndex, triggerEl) {
+    pendingAssign = { rail, slotIndex };
+    assignHeaterSubtitle.textContent = 'Rail ' + railLabelNumber(rail) + ' · Slot ' + (slotIndex + 1);
+    openModal(assignHeaterScrim, triggerEl);
+    startQrScan();
+  }
+  function closeAssignHeaterModal() {
+    stopQrScan();
+    closeModal(assignHeaterScrim);
+    pendingAssign = null;
+  }
+  document.getElementById('assignHeaterCancelBtn').addEventListener('click', closeAssignHeaterModal);
+  assignHeaterScrim.addEventListener('click', (e) => { if (e.target === assignHeaterScrim) closeAssignHeaterModal(); });
+
+  // ---- Remove Heater confirmation modal ----
+  const removeHeaterScrim = document.getElementById('removeHeaterModalScrim');
+  const removeHeaterSubtitle = document.getElementById('removeHeaterModalSubtitle');
+  let pendingRemove = null; // { rail, slot, serial }
+
+  function openRemoveHeaterModal(found, meta) {
+    pendingRemove = { rail: found.rail, slot: found.slot, serial: meta.serial };
+    removeHeaterSubtitle.textContent = meta.serial;
+    openModal(removeHeaterScrim);
+  }
+  function closeRemoveHeaterModal() {
+    closeModal(removeHeaterScrim);
+    pendingRemove = null;
+  }
+  document.getElementById('removeHeaterConfirmBtn').addEventListener('click', () => {
+    if (!pendingRemove) return;
+    const { slot, serial } = pendingRemove;
+    slot.heaterSerial = null;
+    closeRemoveHeaterModal();
+    renderRailGroups();
+    showToast('Removed ' + serial);
+  });
+  document.getElementById('removeHeaterCancelBtn').addEventListener('click', closeRemoveHeaterModal);
+  removeHeaterScrim.addEventListener('click', (e) => { if (e.target === removeHeaterScrim) closeRemoveHeaterModal(); });
+
+  // ---- Remove Rail confirmation modal ----
+  const removeRailScrim = document.getElementById('removeRailModalScrim');
+  const removeRailSubtitle = document.getElementById('removeRailModalSubtitle');
+  let pendingRailRemove = null; // rail
+
+  function openRemoveRailModal(rail) {
+    pendingRailRemove = rail;
+    removeRailSubtitle.textContent = 'Rail ' + railLabelNumber(rail);
+    openModal(removeRailScrim);
+  }
+  function closeRemoveRailModal() {
+    closeModal(removeRailScrim);
+    pendingRailRemove = null;
+  }
+  document.getElementById('removeRailConfirmBtn').addEventListener('click', () => {
+    if (!pendingRailRemove) return;
+    const rail = pendingRailRemove;
+    const idx = RAILS.indexOf(rail);
+    RAILS.splice(idx, 1);
+    // Close up the order sequence within the rail's zone so later rails shift down by one, keeping
+    // "order" contiguous (0..n-1) — buildAddRailButton/insertion logic elsewhere assumes this.
+    RAILS.filter((r) => r.zone === rail.zone && r.order > rail.order).forEach((r) => { r.order -= 1; });
+    closeRemoveRailModal();
+    renderRailGroups();
+  });
+  document.getElementById('removeRailCancelBtn').addEventListener('click', closeRemoveRailModal);
+  removeRailScrim.addEventListener('click', (e) => { if (e.target === removeRailScrim) closeRemoveRailModal(); });
 
   renderRailGroups();
 
@@ -1291,11 +1549,36 @@
     showToast('Copied serial number: ' + serial);
   });
 
+  // Finds the {rail, slot} currently holding a given heater serial — needed to actually mutate
+  // the data model for Swap/Remove, rather than just toasting a placeholder message.
+  function findSlotByHeaterSerial(serial) {
+    for (const rail of RAILS) {
+      const slot = rail.slots.find((s) => s.heaterSerial === serial);
+      if (slot) return { rail, slot };
+    }
+    return null;
+  }
+
   document.querySelectorAll('.action-row').forEach((btn) => {
     btn.addEventListener('click', () => {
+      const action = btn.getAttribute('data-action');
       const meta = HEATERS.find((h) => h.id === overflowHeaterId);
-      const label = btn.textContent.trim();
-      showToast((meta ? meta.serial : '') + ': ' + label);
+      const found = meta ? findSlotByHeaterSerial(meta.id) : null;
+
+      if (action === 'swap') {
+        // No confirmation step: opening the scanner and successfully scanning a replacement is
+        // itself a deliberate, multi-step action — see PRD §04.
+        closeOverflowModal();
+        if (found) openAssignHeaterModal(found.rail, found.slot.index);
+        return;
+      }
+      if (action === 'remove') {
+        closeOverflowModal();
+        if (found) openRemoveHeaterModal(found, meta);
+        return;
+      }
+      // Identify: no visual state to change in this prototype (it blinks an LED on real hardware).
+      showToast((meta ? meta.serial : '') + ': ' + btn.textContent.trim());
       closeOverflowModal();
     });
   });
@@ -1316,6 +1599,9 @@
     if (levelScrim.classList.contains('open')) closeLevelModal();
     if (overflowScrim.classList.contains('open')) closeOverflowModal();
     if (addRailScrim.classList.contains('open')) closeAddRailModal();
+    if (assignHeaterScrim.classList.contains('open')) closeAssignHeaterModal();
+    if (removeHeaterScrim.classList.contains('open')) closeRemoveHeaterModal();
+    if (removeRailScrim.classList.contains('open')) closeRemoveRailModal();
   });
 })();
 </script>
