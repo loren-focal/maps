@@ -91,35 +91,39 @@
     display: flex; flex-direction: column; align-items: center; gap: var(--space-3); flex: none;
     padding: var(--space-3) var(--space-2) var(--space-3);
   }
-  /* Rail label and Remove/rotate controls are rail-group chrome, not part of the physical unit —
-     they stay screen-fixed regardless of the rail's rotation (Rail Editing PRD §02). */
+  /* Rail label and rotate/remove controls are rail-group chrome, not part of the physical unit —
+     they stay screen-fixed regardless of the rail's rotation (Rail Editing PRD §02). Rotate sits
+     top-left, remove top-right, label centered between — kept out of the way of the heaters' own
+     overflow menus below. min-width covers the rare 1-heater rail, where the card would otherwise
+     be too narrow for the label + both corner buttons without crowding. */
   .heater-group .rail-label-row {
-    display: flex; align-items: center; gap: var(--space-2);
+    position: relative; display: flex; align-items: center; justify-content: center;
+    min-width: 150px; width: 100%; padding: 0 26px;
   }
   .heater-group .rail-label {
     font-family: var(--font-mono); font-size: 11px; font-weight: 600;
     letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub);
-    text-align: center;
+    text-align: center; white-space: nowrap;
   }
   .heater-group .rail-heaters { display: flex; gap: 0px; }
 
-  /* Rotate button: edit-mode only, one tap = 90° clockwise through the fixed 0/90/180/270 set. */
-  .rotate-btn {
+  /* Rotate (top-left) and remove (top-right, delete icon): edit-mode only, same small icon-button
+     footprint so the two corners read as a matched pair. */
+  .rotate-btn, .rail-remove-btn {
     display: none; align-items: center; justify-content: center;
+    position: absolute; top: 50%; transform: translateY(-50%);
     width: 22px; height: 22px; padding: 0; border-radius: var(--radius-sm);
     background: none; border: none; box-shadow: none; color: var(--sub);
   }
-  .rotate-btn svg { width: 13px; height: 13px; }
-  body.tech-mode .rotate-btn { display: flex; }
+  .rotate-btn svg, .rail-remove-btn svg { width: 13px; height: 13px; }
+  .rotate-btn { left: 0; }
+  .rail-remove-btn { right: 0; }
+  body.tech-mode .rotate-btn,
+  body.tech-mode .rail-remove-btn { display: flex; }
   @media (hover: hover) {
     .rotate-btn:hover { color: var(--title-dim); background: rgba(255,255,255,0.06); }
+    .rail-remove-btn:hover { color: var(--danger); background: rgba(255,255,255,0.06); }
   }
-
-  .rail-remove-btn {
-    display: none;
-    font-size: 12px; padding: 5px 10px; height: auto;
-  }
-  body.tech-mode .rail-remove-btn { display: inline-flex; }
 
   /* The heater card's own graphic (SVG) rotates in 90° steps to reflect real physical mounting;
      everything outside .heater-rotate (rail label, overflow menu positioning) stays screen-fixed —
@@ -138,14 +142,14 @@
     width: 212px; height: 70px;
   }
 
-  /* Power-cord icon: fixed to the heater's rail-facing edge in its own (unrotated) frame, then
-     rotates together with the card via .heater-rotate above — see PRD §02. Edit-mode only. */
-  .power-cord-icon {
-    display: none;
-    position: absolute; right: -2px; top: 50%; transform: translate(50%, -50%);
-    width: 16px; height: 16px; color: var(--sub);
+  /* Power/lightning icon: one per rail (a rail has a single physical power connection, not one
+     per heater), shown once at the rail-facing end of the rail's heater row. Edit-mode only. */
+  .rail-power-icon {
+    display: none; align-items: center; justify-content: center; flex: none;
+    width: 22px; height: 22px; color: var(--sub);
   }
-  body.tech-mode .power-cord-icon { display: block; }
+  .rail-power-icon svg { width: 15px; height: 15px; }
+  body.tech-mode .rail-power-icon { display: flex; }
 
   /* Overflow menu only ever needs two on-screen positions: below the card when the rail reads
      horizontally (0°/180°), or to its side when the rail reads vertically (90°/270°) — see PRD §02. */
@@ -826,14 +830,19 @@
     '<svg class="offline-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" role="img" aria-label="Offline">' +
       '<path d="M9.94026 4.27441C11.0677 4.59927 12.0954 5.20232 12.9289 6.02813C13.7623 6.85394 14.3749 7.87602 14.7102 9.00041H16.5001C17.2252 9.00042 17.9394 9.17562 18.5822 9.51109C19.2249 9.84656 19.7771 10.3324 20.1917 10.9272C20.6063 11.522 20.871 12.2081 20.9633 12.9272C21.0557 13.6464 20.9729 14.3772 20.7221 15.0574M17.7955 17.8103C17.3751 17.9365 16.9385 18.0005 16.4995 18.0003H7.99968C6.43068 18 4.90726 17.4726 3.67392 16.5027C2.44059 15.5328 1.56885 14.1767 1.19863 12.652C0.828416 11.1272 0.981182 9.52235 1.63241 8.09485C2.28364 6.66736 3.39557 5.50005 4.78974 4.78027M1 1L20.9996 21"/>' +
     '</svg>';
-  // Plug shape drawn in the card's own unrotated frame, pointing at the rail-facing edge — rotates
-  // together with .heater-rotate's sibling content since it's rendered inside the same wrapper.
-  const POWER_CORD_SVG =
-    '<svg class="power-cord-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0V8Z"/><path d="M12 17v5"/>' +
+  // One lightning-bolt icon represents the rail's single physical power connection — a rail is
+  // wired as one unit, not one connection per heater (see PRD polish notes), so this renders once
+  // per rail (appended into .rail-heaters below), not per heater card.
+  const RAIL_POWER_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>' +
     '</svg>';
+  // Quarter-circle arrow (not a full loop) echoes the rail card's own rounded-rect corner profile,
+  // signaling "rotate 90°" rather than a generic full-circle refresh icon.
   const ROTATE_ICON_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 8-8"/><polyline points="12 4 12 8 8 8"/></svg>';
+  const TRASH_ICON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
 
   function railLabelNumber(rail) {
     const sorted = RAILS.slice().sort((a, b) => a.zone - b.zone || a.order - b.order);
@@ -852,7 +861,6 @@
       '<div class="heater-unit" id="heater-' + h.id + '">' +
         '<div class="heater-rotate" data-rotation="' + rail.rotation + '">' +
           buildSVG(h) +
-          POWER_CORD_SVG +
         '</div>' +
         (h.offline ? OFFLINE_ICON_SVG : '') +
       '</div>' +
@@ -868,17 +876,22 @@
     group.setAttribute('data-rail-id', rail.id);
     group.innerHTML =
       '<div class="rail-label-row">' +
-        '<div class="rail-label mono">Rail ' + railLabelNumber(rail) + '</div>' +
         '<button class="btn rotate-btn" data-rotate-rail="' + rail.id + '" type="button" aria-label="Rotate Rail ' + railLabelNumber(rail) + ' clockwise">' + ROTATE_ICON_SVG + '</button>' +
+        '<div class="rail-label mono">Rail ' + railLabelNumber(rail) + '</div>' +
+        '<button class="btn rail-remove-btn tech-only" data-remove-rail="' + rail.id + '" type="button" hidden aria-label="Remove Rail ' + railLabelNumber(rail) + '">' + TRASH_ICON_SVG + '</button>' +
       '</div>' +
-      '<div class="rail-heaters" data-group></div>' +
-      '<button class="btn rail-remove-btn tech-only" data-remove-rail="' + rail.id + '" type="button" hidden>Remove Rail</button>';
+      '<div class="rail-heaters" data-group></div>';
     const heatersEl = group.querySelector('[data-group]');
     rail.slots.forEach((s) => {
       if (!s.heaterSerial) return;
       const h = { id: s.heaterSerial, zone: rail.zone, rail: rail.order, serial: s.heaterSerial, offline: !!s.offline };
       heatersEl.appendChild(buildHeaterCol(h, rail));
     });
+    const powerIcon = document.createElement('div');
+    powerIcon.className = 'rail-power-icon';
+    powerIcon.setAttribute('aria-hidden', 'true');
+    powerIcon.innerHTML = RAIL_POWER_SVG;
+    heatersEl.appendChild(powerIcon);
     return group;
   }
 
