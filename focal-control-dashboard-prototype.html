@@ -167,6 +167,15 @@
   .swatch.ring { background: var(--led-off); }
   .swatch.white { background: var(--led-on); }
 
+  /* Edit-layout toggle: deliberately plain and out of the way (footer, below the legend) — this
+     flips the per-heater overflow menu into technician mode (swap/remove appear alongside the
+     copy/identify actions every staff member can already use). No PIN/gate: rare, not sensitive,
+     so a quiet text toggle is enough friction to keep staff from stumbling into it by accident. */
+  .layout-toggle-row { display: flex; justify-content: center; padding-top: var(--space-3); }
+  /* .btn-full sets display:inline-flex with higher specificity than the UA [hidden] rule, so the
+     hidden attribute alone doesn't hide these — this rule wins on specificity and restores it. */
+  .btn.tech-only[hidden] { display: none; }
+
   /* Modal (quick-set + overflow) */
   /* Darker, more opaque scrim than a typical modal overlay — the goal is to pull focus almost
      entirely onto the sheet's options, not let the dashboard read through underneath it. */
@@ -379,6 +388,9 @@
       <span><i class="swatch white"></i>Heat level</span>
       <span><i class="swatch ring"></i>Off</span>
     </div>
+    <div class="layout-toggle-row">
+      <button class="text-btn" id="techModeBtn" type="button" aria-pressed="false">Edit Layout</button>
+    </div>
   </div>
 
   <!-- Quick-set modal -->
@@ -415,11 +427,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           Identify heater
         </button>
-        <button class="btn btn-full action-row" data-action="swap" type="button">
+        <!-- Technician-only actions: hidden unless Edit Layout mode is on (see techModeBtn) — swapping
+             or removing hardware isn't a staff task, so it stays out of the everyday menu. -->
+        <button class="btn btn-full action-row tech-only" data-action="swap" type="button" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
           Swap heater
         </button>
-        <button class="btn btn-full action-row danger" data-action="remove" type="button">
+        <button class="btn btn-full action-row danger tech-only" data-action="remove" type="button" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           Remove heater
         </button>
@@ -436,6 +450,23 @@
   document.getElementById('scheduleBtn').addEventListener('click', () => {
     window.location.href = 'focal-scheduling-prototype.html';
   });
+
+  // ---- Technician mode: shows Swap/Remove in the heater overflow menu ----
+  // Everyday staff only ever see Copy serial + Identify heater; swapping/removing hardware is rare
+  // and usually done by a technician, so it's tucked behind this explicit, ungated toggle instead
+  // of cluttering the menu (or the whole dashboard) by default.
+  let techMode = false;
+  const techModeBtn = document.getElementById('techModeBtn');
+  function applyTechModeUI() {
+    techModeBtn.setAttribute('aria-pressed', String(techMode));
+    techModeBtn.textContent = techMode ? 'Done Editing' : 'Edit Layout';
+    document.querySelectorAll('.tech-only').forEach((el) => { el.hidden = !techMode; });
+  }
+  techModeBtn.addEventListener('click', () => {
+    techMode = !techMode;
+    applyTechModeUI();
+  });
+  applyTechModeUI();
 
   // ---- Schedule status, shared with focal-scheduling-prototype.html via localStorage ----
   // State shape, defaults, and date math live in focal-shared.js (window.FocalSchedule) so both
@@ -522,20 +553,52 @@
 
   // Zone 1: two groups of three. Zone 2: three groups of two. "rail" selects the group within a zone.
   // "id" is an internal key only (never shown in UI); "serial" is the customer-facing hardware serial.
-  const HEATERS = [
-    { id: "HT-01", zone: 1, rail: 0, serial: "DUO02-2603-SF1-00081" },
-    { id: "HT-02", zone: 1, rail: 0, serial: "DUO02-2603-SF1-00082" },
-    { id: "HT-03", zone: 1, rail: 0, serial: "DUO02-2603-SF1-00083" },
-    { id: "HT-04", zone: 1, rail: 1, serial: "DUO02-2603-SF1-00084" },
-    { id: "HT-05", zone: 1, rail: 1, serial: "DUO02-2603-SF1-00085" },
-    { id: "HT-06", zone: 1, rail: 1, serial: "DUO02-2603-SF1-00086", offline: true },
-    { id: "HT-07", zone: 2, rail: 0, serial: "DUO02-2603-SF1-00087" },
-    { id: "HT-08", zone: 2, rail: 0, serial: "DUO02-2603-SF1-00088" },
-    { id: "HT-09", zone: 2, rail: 1, serial: "DUO02-2603-SF1-00089" },
-    { id: "HT-10", zone: 2, rail: 1, serial: "DUO02-2603-SF1-00090", offline: true },
-    { id: "HT-11", zone: 2, rail: 2, serial: "DUO02-2603-SF1-00091" },
-    { id: "HT-12", zone: 2, rail: 2, serial: "DUO02-2603-SF1-00092" },
+  // ---- Rail/slot data model ----
+  // A rail has a fixed slot count (2 or 3, matching real hardware) chosen at creation and never
+  // changed after — see the Rail Editing PRD §01. Each slot persists its own pitch/roll calibration
+  // independent of whether a heater currently occupies it; slot.heaterSerial is null for an empty
+  // slot. This replaces the old flat HEATERS array — allHeaters() below derives an equivalent flat
+  // list so the rest of this file's heater-keyed logic (buildSVG, render, tap, etc.) is untouched
+  // for this pass; later phases will migrate those call sites to address slots directly.
+  const RAILS = [
+    { id: "R1", zone: 1, order: 0, slotCount: 3, rotation: 0, slots: [
+      { index: 0, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00081" },
+      { index: 1, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00082" },
+      { index: 2, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00083" },
+    ] },
+    { id: "R2", zone: 1, order: 1, slotCount: 3, rotation: 0, slots: [
+      { index: 0, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00084" },
+      { index: 1, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00085" },
+      { index: 2, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00086", offline: true },
+    ] },
+    { id: "R3", zone: 2, order: 0, slotCount: 2, rotation: 0, slots: [
+      { index: 0, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00087" },
+      { index: 1, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00088" },
+    ] },
+    { id: "R4", zone: 2, order: 1, slotCount: 2, rotation: 0, slots: [
+      { index: 0, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00089" },
+      { index: 1, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00090", offline: true },
+    ] },
+    { id: "R5", zone: 2, order: 2, slotCount: 2, rotation: 0, slots: [
+      { index: 0, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00091" },
+      { index: 1, pitch: 15, roll: 0, heaterSerial: "DUO02-2603-SF1-00092" },
+    ] },
   ];
+
+  // Flat, heater-keyed view derived from RAILS — {id, zone, rail, serial, offline} per occupied
+  // slot, in rail/slot order, matching the shape and ordering the old hardcoded HEATERS array had.
+  // "rail" here is the rail's 0-based position within its zone (RAILS[].order), not the rail id.
+  function allHeaters() {
+    const out = [];
+    RAILS.slice().sort((a, b) => a.zone - b.zone || a.order - b.order).forEach((r) => {
+      r.slots.forEach((s) => {
+        if (!s.heaterSerial) return;
+        out.push({ id: s.heaterSerial, zone: r.zone, rail: r.order, serial: s.heaterSerial, offline: !!s.offline });
+      });
+    });
+    return out;
+  }
+  const HEATERS = allHeaters();
 
   const state = {};
   HEATERS.forEach((h) => {
