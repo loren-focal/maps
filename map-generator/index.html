@@ -322,22 +322,22 @@ function buildSVG() {
     <defs>
       <style>
         text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill:#2b3442; }
-        .zone { fill:#e9eef4; stroke:#c3d0e0; stroke-width:1; }
+        .zone { fill:#e9eef4; stroke:#8a99ad; stroke-width:1; }
         .zlab { font-size:15px; font-weight:700; }
         .wall { stroke:#2b3442; stroke-width:4; stroke-linecap:square; fill:none; }
-        .band { fill:#e9eef4; stroke:#c3d0e0; stroke-width:1; }
+        .band { fill:#e9eef4; stroke:#8a99ad; stroke-width:1; }
         .bandlab { fill:#2b3442; font-weight:700; }
         .bandlab.big { font-size:15px; }
         .bandlab.small { font-size:13px; }
         .road { fill:#e9eef4; }
-        .road-edge { stroke:#c3d0e0; stroke-width:1.5; }
-        .road-center { stroke:#c3d0e0; stroke-width:2; stroke-dasharray:18 14; stroke-linecap:butt; }
+        .road-edge { stroke:#8a99ad; stroke-width:1.5; }
+        .road-center { stroke:#8a99ad; stroke-width:2; stroke-dasharray:18 14; stroke-linecap:butt; }
         .road-plate { fill:#e9eef4; }
         .streetlab { font-size:15px; font-weight:700; }
       </style>
     </defs>`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}">${defs}<rect x="0" y="0" width="${svgW}" height="${svgH}" fill="#ffffff"/>${S.join("")}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}">${defs}${S.join("")}</svg>`;
 }
 
 // ---------- Render / export ----------
