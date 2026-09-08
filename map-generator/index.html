@@ -301,7 +301,6 @@ function buildSVG() {
     S.push(`<rect x="${rx}" y="${roadY}" width="${rw}" height="${rh}" class="road"/>`);
     S.push(`<line x1="${rx}" y1="${roadY}" x2="${rx+rw}" y2="${roadY}" class="road-edge"/>`);
     S.push(`<line x1="${rx}" y1="${roadY+rh}" x2="${rx+rw}" y2="${roadY+rh}" class="road-edge"/>`);
-    S.push(`<line x1="${rx+8}" y1="${cy}" x2="${rx+rw-8}" y2="${cy}" class="road-center"/>`);
     if (edge.streetName) {
       const w = edge.streetName.length * 8 + 26;
       S.push(`<rect x="${svgW/2 - w/2}" y="${cy - 13}" width="${w}" height="26" class="road-plate"/>`);
@@ -331,7 +330,6 @@ function buildSVG() {
         .bandlab.small { font-size:13px; }
         .road { fill:#e9eef4; }
         .road-edge { stroke:#8a99ad; stroke-width:1.5; }
-        .road-center { stroke:#8a99ad; stroke-width:2; stroke-dasharray:18 14; stroke-linecap:butt; }
         .road-plate { fill:#e9eef4; }
         .streetlab { font-size:15px; font-weight:700; }
       </style>
